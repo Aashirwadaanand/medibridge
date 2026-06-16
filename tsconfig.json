@@ -4,8 +4,7 @@
     "types": [
       "node"
     ],
-    "ignoreDeprecations": "6.0",
-    "module": "nodenext",
+    "module": "commonjs",
     "lib": [
       "ES2022"
     ],
@@ -22,7 +21,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "nodeNext",
+    "moduleResolution": "node",
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,

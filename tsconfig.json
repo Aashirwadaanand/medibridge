@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "CommonJS",
+    "types":["node"],
+    "ignoreDeprecations": "6.0",
+    "module": "nodeNext",
     "lib": [
       "ES2022"
     ],
@@ -18,14 +20,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
-    "baseUrl": "./",
-    "paths": {
-      "*": [
-        "node_modules/*",
-        "src/*"
-      ]
-    },
+    "moduleResolution": "nodeNext",
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,

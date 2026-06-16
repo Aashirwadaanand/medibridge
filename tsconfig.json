@@ -1,9 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "types":["node"],
+    "types": [
+      "node"
+    ],
     "ignoreDeprecations": "6.0",
-    "module": "nodeNext",
+    "module": "nodenext",
     "lib": [
       "ES2022"
     ],

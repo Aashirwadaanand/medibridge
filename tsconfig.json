@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",
     "ignoreDeprecations": "6.0",
-    "module": "CommonJS",
+    "module": "nodeNext",
     "lib": [
       "ES2022"
     ],
@@ -20,12 +20,6 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "nodeNext",
-    "paths": {
-      "*": [
-        "node_modules/*",
-        "src/*"
-      ]
-    },
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,

@@ -50,6 +50,12 @@ app.get('/test-root', (_req, res) => {
 });
 
 // Mount all core api routes under /api namespace
+app.get('/', (_req, res) => {
+  res.json({
+    status: 'success',
+    message: 'MEDIBRIDGE Backend API is running 🚀'
+  });
+});
 app.use('/api', apiRouter);
 
 // Catch-all handler for 404 unmatched endpoints

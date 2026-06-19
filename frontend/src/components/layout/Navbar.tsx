@@ -2,19 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Bell, Search, Settings, User as UserIcon, LogOut, HelpCircle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
+import { useAppMode } from '../../context/AppModeContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAppMode } from '../../context/AppModeContext';
-import { mockUsers } from '../../services/mockData';
+// switchDemoRole is imported only for the demo quick-switcher feature.
+// In production builds, this import is tree-shaken away (DEMO_MODE is false,
+// so the JSX branch referencing it is dead code).
+import { switchDemoRole } from '../../services/auth/index';
 
 interface NavbarProps {
   onOpenNotifications: () => void;
 }
 
+const ROLES = ['patient', 'doctor', 'hospital', 'admin'] as const;
+
 export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
   const { role, currentUser, unreadCount } = useApp();
   const { logout } = useAuth();
-  const { mode } = useAppMode();
+  const { isDemoMode } = useAppMode();
   const navigate = useNavigate();
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -38,11 +43,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
 
       {/* Utilities */}
       <div className="flex items-center gap-6">
-        {/* Demo Mode Badge */}
-        {mode === 'demo' && (
+        {/* Demo Mode Badge — shown only when isDemoMode is true */}
+        {isDemoMode && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.15)] select-none">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
-            Demo Mode Active
+            Demo Mode
           </div>
         )}
 
@@ -77,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
           >
             <div className="relative">
               <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-400 to-emerald-400 flex items-center justify-center font-bold text-black text-xs select-none">
-                {currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('') : 'U'}
+                {currentUser.name ? currentUser.name.split(' ').map((n) => n[0]).join('') : 'U'}
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -91,9 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
                   {role}
                 </span>
               </div>
-              <p className="text-[9px] text-slate-500 mt-1 leading-none">
-                {currentUser.email}
-              </p>
+              <p className="text-[9px] text-slate-500 mt-1 leading-none">{currentUser.email}</p>
             </div>
           </button>
 
@@ -108,7 +111,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
                   transition={{ duration: 0.15, ease: 'easeOut' }}
                   className="absolute right-0 mt-2 w-56 glass-panel border border-white/10 rounded-xl shadow-2xl p-1 z-20 bg-[#0b1120]/95 backdrop-blur-xl"
                 >
-                  
                   {/* User Info Header */}
                   <div className="px-3 py-2 border-b border-white/5 mb-1 text-left">
                     <p className="text-xs font-bold text-slate-200 truncate">{currentUser.name}</p>
@@ -117,10 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
 
                   {/* Actions */}
                   <button
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      navigate('/profile');
-                    }}
+                    onClick={() => { setDropdownOpen(false); navigate('/profile'); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-400 hover:bg-white/5 hover:text-slate-200 rounded-lg transition-all text-left"
                   >
                     <UserIcon className="w-3.5 h-3.5 text-cyan-400" />
@@ -128,10 +127,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
                   </button>
 
                   <button
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      navigate('/settings');
-                    }}
+                    onClick={() => { setDropdownOpen(false); navigate('/settings'); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-400 hover:bg-white/5 hover:text-slate-200 rounded-lg transition-all text-left"
                   >
                     <Settings className="w-3.5 h-3.5 text-cyan-400" />
@@ -139,10 +135,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
                   </button>
 
                   <button
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      onOpenNotifications();
-                    }}
+                    onClick={() => { setDropdownOpen(false); onOpenNotifications(); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-400 hover:bg-white/5 hover:text-slate-200 rounded-lg transition-all text-left"
                   >
                     <Bell className="w-3.5 h-3.5 text-cyan-400" />
@@ -150,35 +143,26 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
                   </button>
 
                   <button
-                    onClick={() => {
-                      setDropdownOpen(false);
-                      alert('Help Desk: Support team contacted. A ticket has been raised.');
-                    }}
+                    onClick={() => { setDropdownOpen(false); alert('Help Desk: Support team contacted. A ticket has been raised.'); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-400 hover:bg-white/5 hover:text-slate-200 rounded-lg transition-all text-left"
                   >
                     <HelpCircle className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Help & Support</span>
+                    <span>Help &amp; Support</span>
                   </button>
 
-                  {/* Quick Role Switcher (Demo Mode Only) */}
-                  {mode === 'demo' && (
+                  {/* Quick Role Switcher — visible in demo mode only (UI decision via context) */}
+                  {isDemoMode && (
                     <>
                       <div className="border-t border-white/5 my-1" />
                       <div className="px-3 py-1.5 text-left">
                         <p className="text-[8px] text-slate-500 font-bold tracking-wider uppercase">Quick Switch Role</p>
                       </div>
-                      {(['patient', 'doctor', 'hospital', 'admin'] as const).map(r => (
+                      {ROLES.map((r) => (
                         <button
                           key={r}
                           onClick={() => {
                             setDropdownOpen(false);
-                            const targetUser = mockUsers[r];
-                            if (targetUser) {
-                              localStorage.setItem('medibridge_user', JSON.stringify(targetUser));
-                              localStorage.setItem('medibridge_role', r);
-                              localStorage.setItem('medibridge_token', targetUser.token || `mock-jwt-token-${r}`);
-                              window.location.href = `/${r}`;
-                            }
+                            switchDemoRole(r);
                           }}
                           className={`w-full flex items-center gap-2 px-3 py-1.5 text-[11px] rounded-lg transition-all text-left ${
                             role === r
@@ -191,15 +175,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
                       ))}
                     </>
                   )}
-                  
+
                   <div className="border-t border-white/5 mt-1 pt-1">
                     <button
-                      onClick={() => {
-                        logout();
-                        navigate('/login');
-                        setDropdownOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs rounded-lg text-rose-400 hover:bg-rose-500/10 transition-all font-semibold animate-none"
+                      onClick={() => { logout(); navigate('/login'); setDropdownOpen(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs rounded-lg text-rose-400 hover:bg-rose-500/10 transition-all font-semibold"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       <span>Logout</span>
@@ -214,4 +194,5 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
     </header>
   );
 };
+
 export default Navbar;

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "rep_01",
+    "patientId": "user_pat_01",
+    "patientName": "Anshuman Das",
+    "title": "Comprehensive Lipids Panel",
+    "uploadDate": "2026-06-09T10:00:00.000Z",
+    "status": "completed",
+    "parsedInsights": {
+      "summary": "Total cholesterol levels are slightly elevated. HDL (Good Cholesterol) is in the optimal range. LDL is above target for a cardiovascular patient.",
+      "criticalFindings": ["LDL Cholesterol: 145 mg/dL (Target: <100 mg/dL)", "Total Cholesterol: 218 mg/dL (Borderline High)"],
+      "recommendations": ["Maintain low-sodium, low-saturated fat diet.", "Follow up with Dr. Sarika Sharma in 4 weeks.", "Consider increasing Atorvastatin dosage if levels persist."]
+    }
+  },
+  {
+    "id": "rep_02",
+    "patientId": "user_pat_01",
+    "patientName": "Anshuman Das",
+    "title": "Renal Function Telemetry",
+    "uploadDate": "2026-05-20T14:00:00.000Z",
+    "status": "completed",
+    "parsedInsights": {
+      "summary": "Kidney function panels show eGFR within acceptable range. Creatinine levels are normal. No signs of nephropathy at this stage.",
+      "criticalFindings": ["eGFR: 78 mL/min/1.73m² (Stage G2 — Mildly Decreased)"],
+      "recommendations": ["Maintain adequate hydration (2.5L water/day).", "Avoid NSAIDs for pain management.", "Recheck in 6 months."]
+    }
+  },
+  {
+    "id": "rep_03",
+    "patientId": "user_pat_02",
+    "patientName": "Priya Mehta",
+    "title": "Thyroid Stimulating Hormone (TSH) Profile",
+    "uploadDate": "2026-06-08T09:00:00.000Z",
+    "status": "completed",
+    "parsedInsights": {
+      "summary": "TSH levels indicate subclinical hypothyroidism. T3 and T4 within normal range. Levothyroxine therapy is appropriate.",
+      "criticalFindings": ["TSH: 5.8 mIU/L (Normal: 0.4–4.0 mIU/L — Mildly Elevated)"],
+      "recommendations": ["Continue Levothyroxine 50mcg therapy.", "Recheck TSH in 6–8 weeks.", "Avoid soy products near medication time."]
+    }
+  },
+  {
+    "id": "rep_04",
+    "patientId": "user_pat_03",
+    "patientName": "Rahul Verma",
+    "title": "Glycated Hemoglobin (HbA1c) Analysis",
+    "uploadDate": "2026-06-01T11:00:00.000Z",
+    "status": "processing",
+    "parsedInsights": null
+  }
+]

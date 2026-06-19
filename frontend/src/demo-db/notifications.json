@@ -1,0 +1,74 @@
+[
+  {
+    "id": "notif_01",
+    "userId": "user_pat_01",
+    "title": "Emergency Alert",
+    "message": "Extreme Temperature Warning: Take extra cardiovascular precautions today. Stay hydrated.",
+    "type": "emergency",
+    "isRead": false,
+    "createdAt": "2026-06-19T06:30:00.000Z"
+  },
+  {
+    "id": "notif_02",
+    "userId": "user_pat_01",
+    "title": "Medication Refill Reminder",
+    "message": "Your Lisinopril supply has dropped below 10 days. Request a refill from your pharmacy soon.",
+    "type": "medicine",
+    "isRead": false,
+    "createdAt": "2026-06-19T08:00:00.000Z"
+  },
+  {
+    "id": "notif_03",
+    "userId": "user_pat_01",
+    "title": "Cardiology Appointment Confirmed",
+    "message": "Your appointment with Dr. Sarika Sharma on June 22nd at 10:30 AM has been approved.",
+    "type": "appointment",
+    "isRead": false,
+    "createdAt": "2026-06-18T14:00:00.000Z"
+  },
+  {
+    "id": "notif_04",
+    "userId": "user_pat_01",
+    "title": "New Lab Report Available",
+    "message": "Your Comprehensive Lipids Panel report results are ready for review.",
+    "type": "general",
+    "isRead": true,
+    "createdAt": "2026-06-17T11:00:00.000Z"
+  },
+  {
+    "id": "notif_05",
+    "userId": "user_doc_01",
+    "title": "New Appointment Request",
+    "message": "Anshuman Das has requested a cardiovascular follow-up consultation on June 22nd.",
+    "type": "appointment",
+    "isRead": false,
+    "createdAt": "2026-06-18T09:00:00.000Z"
+  },
+  {
+    "id": "notif_06",
+    "userId": "user_doc_01",
+    "title": "Prescription Dispensed",
+    "message": "Lisinopril 10mg for patient Anshuman Das has been dispensed by MedPlus Pharmacy.",
+    "type": "prescription",
+    "isRead": true,
+    "createdAt": "2026-06-16T15:30:00.000Z"
+  },
+  {
+    "id": "notif_07",
+    "userId": "user_hosp_01",
+    "title": "Bed Capacity Alert",
+    "message": "ICU occupancy has reached 85%. Consider reviewing discharge schedules.",
+    "type": "emergency",
+    "isRead": false,
+    "createdAt": "2026-06-19T07:00:00.000Z"
+  },
+  {
+    "id": "notif_08",
+    "userId": "user_adm_01",
+    "title": "System Health Check",
+    "message": "MEDIBRIDGE platform services upgraded successfully. All telemetry pipelines are operational.",
+    "type": "general",
+    "isRead": true,
+    "createdAt": "2026-06-15T00:00:00.000Z"
+  }
+]

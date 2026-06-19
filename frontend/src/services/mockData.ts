@@ -1,4 +1,5 @@
 import { User, Appointment, Medicine, MedicalReport, Prescription, Hospital, Notification } from '../types';
+import { DEMO_MODE } from '../config/appMode';
 
 export const mockUsers: Record<string, User> = {
   patient: {
@@ -508,10 +509,12 @@ export const syncInMemoryCache = () => {
   mockNotifications = getStoredList('medibridge_demo_notifications');
 };
 
-// Mode selector getter
-export const isDemoMode = () => {
-  return (localStorage.getItem('medibridge_app_mode') || 'demo') === 'demo';
-};
+/**
+ * @deprecated isDemoMode() has been removed.
+ * Use `DEMO_MODE` from 'config/appMode' instead.
+ * This stub is kept for any stale imports and always returns DEMO_MODE.
+ */
+export const isDemoMode = () => DEMO_MODE;
 
 // Data Management Operations
 export const resetDemoData = () => {
@@ -614,7 +617,8 @@ export const clearDemoNotifications = () => {
 
 export const restoreFactoryDefaults = () => {
   localStorage.removeItem('medibridge_demo_initialized');
-  localStorage.setItem('medibridge_app_mode', 'demo');
+  // Also reset the new JSON-seeded demo-db
+  import('./_demoDb').then(({ resetDemoDb }) => resetDemoDb()).catch(() => {});
   generateDemoDatabase();
   syncInMemoryCache();
 };

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../types';
-import authService from '../services/authService';
+import { authService } from '../services/auth/index';
+import { STORAGE } from '../config/appMode';
 
 interface AuthContextType {
   user: User | null;
@@ -20,8 +21,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('medibridge_token'));
-  const [role, setRole] = useState<string | null>(localStorage.getItem('medibridge_user') ? JSON.parse(localStorage.getItem('medibridge_user')!).role : null);
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem(STORAGE.TOKEN)
+  );
+  const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [sessionExpired, setSessionExpired] = useState<boolean>(false);
 
@@ -29,14 +32,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const savedToken = localStorage.getItem('medibridge_token');
+      const savedToken = localStorage.getItem(STORAGE.TOKEN);
       if (savedToken) {
         try {
+          /**
+           * In demo mode: demoAuthService.getCurrentUser() reads from
+           * demo_medibridge_user — no Railway call is ever made.
+           *
+           * In production: prodAuthService.getCurrentUser() calls
+           * /auth/profile and validates the real JWT with MongoDB.
+           *
+           * The "No authenticated user found in demo context" error is
+           * IMPOSSIBLE in production because we never run demo code there.
+           */
           const fetchedUser = await authService.getCurrentUser();
           setUser(fetchedUser);
           setToken(savedToken);
           setRole(fetchedUser.role);
-          localStorage.setItem('medibridge_user', JSON.stringify(fetchedUser));
+          localStorage.setItem(STORAGE.USER, JSON.stringify(fetchedUser));
         } catch (error) {
           console.error('Session validation failed:', error);
           logout();
@@ -48,12 +61,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initializeAuth();
 
-    // Listen to custom unauthorized event from API client interceptor
+    // Listen to 401 events from the API client (production only — demo never fires this)
     const handleUnauthorized = () => {
       logout();
       setSessionExpired(true);
     };
-    
+
     window.addEventListener('medibridge-unauthorized', handleUnauthorized);
     return () => {
       window.removeEventListener('medibridge-unauthorized', handleUnauthorized);
@@ -66,32 +79,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(data.token);
     setUser(data.user);
     setRole(data.user.role);
-    localStorage.setItem('medibridge_token', data.token);
-    localStorage.setItem('medibridge_user', JSON.stringify(data.user));
-    
-    // Store last login timestamp
+    // authService.login() already writes to the correct STORAGE.TOKEN key internally
     localStorage.setItem(`medibridge_last_login_${data.user.id}`, new Date().toISOString());
-    
     return data.user;
   };
 
-  const register = async (name: string, email: string, password: string, role: string): Promise<User> => {
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+    role: string
+  ): Promise<User> => {
     setSessionExpired(false);
     const data = await authService.register(name, email, password, role);
     setToken(data.token);
     setUser(data.user);
     setRole(data.user.role);
-    localStorage.setItem('medibridge_token', data.token);
-    localStorage.setItem('medibridge_user', JSON.stringify(data.user));
-    
-    // Store last login timestamp
     localStorage.setItem(`medibridge_last_login_${data.user.id}`, new Date().toISOString());
-    
     return data.user;
   };
 
   const logout = () => {
-    authService.logout();
+    authService.logout(); // clears the correct storage key (demo or prod)
     setToken(null);
     setUser(null);
     setRole(null);
@@ -101,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     const updatedUser = { ...user, name: newName };
     setUser(updatedUser);
-    localStorage.setItem('medibridge_user', JSON.stringify(updatedUser));
+    localStorage.setItem(STORAGE.USER, JSON.stringify(updatedUser));
   };
 
   return (

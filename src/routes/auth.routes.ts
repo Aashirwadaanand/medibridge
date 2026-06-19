@@ -3,6 +3,12 @@ import { AuthController } from '../controllers/auth.controller';
 import { authenticateUser } from '../middleware/auth.middleware';
 
 const router = Router();
+router.get('/', (_req, res) => {
+    res.json({
+        status: 'success',
+        message: 'Auth API is working'
+    });
+});
 
 /**
  * @route   POST /api/auth/register

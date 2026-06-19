@@ -1,32 +1,32 @@
-import React, { createContext, useContext, useState } from 'react';
+/**
+ * AppModeContext.tsx — Read-only mode indicator.
+ *
+ * Mode is derived entirely from the build-time DEMO_MODE constant.
+ * There is NO setMode function — the mode cannot be changed at runtime.
+ * UI components use `isDemoMode` to show/hide demo-specific UI elements.
+ */
+import React, { createContext, useContext } from 'react';
+import { DEMO_MODE } from '../config/appMode';
 
 export type AppMode = 'demo' | 'live';
 
 interface AppModeContextType {
   mode: AppMode;
-  setMode: (mode: AppMode) => void;
+  isDemoMode: boolean;
 }
 
 const AppModeContext = createContext<AppModeContextType | undefined>(undefined);
 
-export const AppModeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [mode, setModeState] = useState<AppMode>(() => {
-    return (localStorage.getItem('medibridge_app_mode') as AppMode) || 'demo';
-  });
-
-  const setMode = (newMode: AppMode) => {
-    setModeState(newMode);
-    localStorage.setItem('medibridge_app_mode', newMode);
-    // Dispatch custom event to notify services if needed, and trigger re-render
-    window.dispatchEvent(new Event('medibridge-mode-change'));
-  };
-
-  return (
-    <AppModeContext.Provider value={{ mode, setMode }}>
-      {children}
-    </AppModeContext.Provider>
-  );
+const MODE_VALUE: AppModeContextType = {
+  mode: DEMO_MODE ? 'demo' : 'live',
+  isDemoMode: DEMO_MODE,
 };
+
+export const AppModeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <AppModeContext.Provider value={MODE_VALUE}>
+    {children}
+  </AppModeContext.Provider>
+);
 
 export const useAppMode = () => {
   const context = useContext(AppModeContext);

@@ -1,0 +1,99 @@
+{
+  "patient": {
+    "id": "user_pat_01",
+    "name": "Anshuman Das",
+    "email": "patient@medibridge.com",
+    "role": "patient",
+    "token": "demo-jwt-patient-NOT-A-REAL-TOKEN",
+    "createdAt": "2026-06-10T12:00:00Z",
+    "isActive": true
+  },
+  "doctor": {
+    "id": "user_doc_01",
+    "name": "Dr. Sarika Sharma",
+    "email": "doctor@medibridge.com",
+    "role": "doctor",
+    "token": "demo-jwt-doctor-NOT-A-REAL-TOKEN",
+    "createdAt": "2026-06-08T09:30:00Z",
+    "isActive": true
+  },
+  "hospital": {
+    "id": "user_hosp_01",
+    "name": "Apollo Hospital Delhi",
+    "email": "hospital@medibridge.com",
+    "role": "hospital",
+    "token": "demo-jwt-hospital-NOT-A-REAL-TOKEN",
+    "createdAt": "2026-06-05T08:00:00Z",
+    "isActive": true
+  },
+  "pharmacy": {
+    "id": "user_pharma_01",
+    "name": "MedPlus Pharmacy Chain",
+    "email": "pharmacy@medibridge.com",
+    "role": "pharmacy",
+    "token": "demo-jwt-pharmacy-NOT-A-REAL-TOKEN",
+    "createdAt": "2026-06-03T10:00:00Z",
+    "isActive": true
+  },
+  "admin": {
+    "id": "user_adm_01",
+    "name": "System Operations Control",
+    "email": "admin@medibridge.com",
+    "role": "admin",
+    "token": "demo-jwt-admin-NOT-A-REAL-TOKEN",
+    "createdAt": "2026-06-01T07:15:00Z",
+    "isActive": true
+  },
+  "credentials": {
+    "patient@medibridge.com": "patient123",
+    "doctor@medibridge.com": "doctor123",
+    "hospital@medibridge.com": "hospital123",
+    "pharmacy@medibridge.com": "pharmacy123",
+    "admin@medibridge.com": "admin123"
+  },
+  "emailToRole": {
+    "patient@medibridge.com": "patient",
+    "doctor@medibridge.com": "doctor",
+    "hospital@medibridge.com": "hospital",
+    "pharmacy@medibridge.com": "pharmacy",
+    "admin@medibridge.com": "admin"
+  },
+  "allUsers": [
+    {
+      "id": "user_pat_01", "name": "Anshuman Das", "email": "patient@medibridge.com",
+      "role": "patient", "createdAt": "2026-06-10T12:00:00Z", "isActive": true
+    },
+    {
+      "id": "user_pat_02", "name": "Priya Mehta", "email": "priya.mehta@gmail.com",
+      "role": "patient", "createdAt": "2026-06-09T11:00:00Z", "isActive": true
+    },
+    {
+      "id": "user_pat_03", "name": "Rahul Verma", "email": "rahul.verma@gmail.com",
+      "role": "patient", "createdAt": "2026-06-07T14:00:00Z", "isActive": true
+    },
+    {
+      "id": "user_pat_04", "name": "Sunita Gupta", "email": "sunita.gupta@gmail.com",
+      "role": "patient", "createdAt": "2026-06-06T10:00:00Z", "isActive": false
+    },
+    {
+      "id": "user_doc_01", "name": "Dr. Sarika Sharma", "email": "doctor@medibridge.com",
+      "role": "doctor", "createdAt": "2026-06-08T09:30:00Z", "isActive": true
+    },
+    {
+      "id": "user_doc_02", "name": "Dr. Rajiv Patel", "email": "rajiv.patel@medibridge.io",
+      "role": "doctor", "createdAt": "2026-06-04T09:00:00Z", "isActive": true
+    },
+    {
+      "id": "user_hosp_01", "name": "Apollo Hospital Delhi", "email": "hospital@medibridge.com",
+      "role": "hospital", "createdAt": "2026-06-05T08:00:00Z", "isActive": true
+    },
+    {
+      "id": "user_pharma_01", "name": "MedPlus Pharmacy Chain", "email": "pharmacy@medibridge.com",
+      "role": "pharmacy", "createdAt": "2026-06-03T10:00:00Z", "isActive": true
+    },
+    {
+      "id": "user_adm_01", "name": "System Operations Control", "email": "admin@medibridge.com",
+      "role": "admin", "createdAt": "2026-06-01T07:15:00Z", "isActive": true
+    }
+  ]
+}

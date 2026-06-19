@@ -1,7 +1,31 @@
+/**
+ * AppContext.tsx
+ *
+ * Manages UI-layer state: current role, notifications, and emergency (SOS) state.
+ *
+ * Key changes from the old architecture:
+ *  - currentUser is ALWAYS sourced from AuthContext — never from mockUsers.
+ *  - No mock tokens are ever written to localStorage here.
+ *  - setRole() only updates UI state; auth state is exclusively owned by AuthContext.
+ *  - Notification storage keys use STORAGE.NOTIFICATIONS_PREFIX (mode-scoped).
+ *  - mockEmergencyState is still used as the initial SOS state (it's UI-only data, not auth).
+ */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole, Notification, NotificationType } from '../types';
-import { mockUsers, mockNotifications, mockEmergencyState, EmergencyState } from '../services/mockData';
+import { mockEmergencyState, EmergencyState } from '../services/mockData';
 import { useAuth } from './AuthContext';
+import { STORAGE } from '../config/appMode';
+
+// ─── Fallback user (no auth, no mock data) ───────────────────────────────────
+
+const ANONYMOUS_USER: User = {
+  id: 'anonymous',
+  name: 'Guest',
+  email: '',
+  role: 'patient',
+};
+
+// ─── Context Type ─────────────────────────────────────────────────────────────
 
 interface AppContextType {
   role: UserRole;
@@ -21,91 +45,89 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const [role, setRoleState] = useState<UserRole>(() => {
-    return (localStorage.getItem('medibridge_role') as UserRole) || 'patient';
-  });
-  const [currentUser, setCurrentUser] = useState<User>(mockUsers[role]);
+
+  // Role is derived from the authenticated user when available
+  const [role, setRoleState] = useState<UserRole>(
+    () => (localStorage.getItem('medibridge_role') as UserRole) || 'patient'
+  );
+
+  // currentUser always comes from AuthContext — never from mock datasets
+  const [currentUser, setCurrentUser] = useState<User>(user ?? ANONYMOUS_USER);
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [emergencyState, setEmergencyState] = useState<EmergencyState>(mockEmergencyState);
 
+  // ── Sync with AuthContext user ─────────────────────────────────────────────
   useEffect(() => {
     if (user) {
       setRoleState(user.role);
       setCurrentUser(user);
     } else {
       setRoleState('patient');
-      setCurrentUser(mockUsers.patient);
+      setCurrentUser(ANONYMOUS_USER);
     }
   }, [user]);
 
-  // Load user-specific notifications from localStorage
+  // ── Load mode-scoped notifications from localStorage ──────────────────────
   useEffect(() => {
-    if (currentUser && currentUser.id) {
-      const stored = localStorage.getItem(`medibridge_notifications_${currentUser.id}`);
-      if (stored) {
-        setNotifications(JSON.parse(stored));
-      } else {
-        const initial = mockNotifications.map((n, i) => ({
-          ...n,
-          userId: currentUser.id,
-          id: `not_${Date.now()}_${i}`
-        }));
-        setNotifications(initial);
-        localStorage.setItem(`medibridge_notifications_${currentUser.id}`, JSON.stringify(initial));
-      }
+    if (!currentUser?.id || currentUser.id === 'anonymous') return;
+    const key = `${STORAGE.NOTIFICATIONS_PREFIX}${currentUser.id}`;
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      setNotifications(JSON.parse(stored));
+    } else {
+      setNotifications([]);
     }
   }, [currentUser]);
 
+  // ── setRole ───────────────────────────────────────────────────────────────
+  // Only updates UI role label — does NOT write mock tokens or override auth.
   const setRole = (newRole: UserRole) => {
     setRoleState(newRole);
-    setCurrentUser(mockUsers[newRole]);
     localStorage.setItem('medibridge_role', newRole);
-    localStorage.setItem('medibridge_token', mockUsers[newRole].token || '');
+    // ✅ REMOVED: localStorage.setItem('medibridge_token', mockUsers[newRole].token)
+    //    That line was corrupting real JWT sessions in production.
   };
 
-  useEffect(() => {
-    localStorage.setItem('medibridge_token', currentUser.token || '');
-  }, [currentUser]);
+  // ── Notification helpers ───────────────────────────────────────────────────
+  const saveNotifications = (updated: Notification[]) => {
+    const key = `${STORAGE.NOTIFICATIONS_PREFIX}${currentUser.id}`;
+    localStorage.setItem(key, JSON.stringify(updated));
+  };
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const markNotificationRead = (id: string) => {
-    setNotifications(prev => {
-      const updated = prev.map(n => (n.id === id ? { ...n, isRead: true } : n));
-      if (currentUser && currentUser.id) {
-        localStorage.setItem(`medibridge_notifications_${currentUser.id}`, JSON.stringify(updated));
-      }
+    setNotifications((prev) => {
+      const updated = prev.map((n) => (n.id === id ? { ...n, isRead: true } : n));
+      saveNotifications(updated);
       return updated;
     });
   };
 
   const markAllNotificationsRead = () => {
-    setNotifications(prev => {
-      const updated = prev.map(n => ({ ...n, isRead: true }));
-      if (currentUser && currentUser.id) {
-        localStorage.setItem(`medibridge_notifications_${currentUser.id}`, JSON.stringify(updated));
-      }
+    setNotifications((prev) => {
+      const updated = prev.map((n) => ({ ...n, isRead: true }));
+      saveNotifications(updated);
       return updated;
     });
   };
 
   const deleteNotification = (id: string) => {
-    setNotifications(prev => {
-      const updated = prev.filter(n => n.id !== id);
-      if (currentUser && currentUser.id) {
-        localStorage.setItem(`medibridge_notifications_${currentUser.id}`, JSON.stringify(updated));
-      }
+    setNotifications((prev) => {
+      const updated = prev.filter((n) => n.id !== id);
+      saveNotifications(updated);
       return updated;
     });
   };
 
   const clearAllNotifications = () => {
     setNotifications([]);
-    if (currentUser && currentUser.id) {
-      localStorage.setItem(`medibridge_notifications_${currentUser.id}`, JSON.stringify([]));
-    }
+    saveNotifications([]);
   };
 
   const addNotification = (title: string, message: string, type: NotificationType) => {
@@ -116,17 +138,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       message,
       type,
       isRead: false,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
-    setNotifications(prev => {
+    setNotifications((prev) => {
       const updated = [newNotif, ...prev];
-      if (currentUser && currentUser.id) {
-        localStorage.setItem(`medibridge_notifications_${currentUser.id}`, JSON.stringify(updated));
-      }
+      saveNotifications(updated);
       return updated;
     });
   };
 
+  // ── SOS / Emergency ────────────────────────────────────────────────────────
   const triggerSOS = () => {
     setEmergencyState({
       riskLevel: 'CRITICAL',
@@ -134,11 +155,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       sosTriggeredAt: new Date().toISOString(),
       ambulanceStatus: 'dispatched',
       ambulanceEtaMinutes: 8,
-      ambulanceDistanceKm: 4.2
+      ambulanceDistanceKm: 4.2,
     });
     addNotification(
       'CRITICAL SOS ACTIVE',
-      'Emergency SOS response triggered. Medical details and telemetry shared with Apollo Hospital Emergency Team.',
+      'Emergency SOS triggered. Medical telemetry shared with Apollo Hospital Emergency Team.',
       'emergency'
     );
   };
@@ -147,7 +168,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setEmergencyState({
       riskLevel: 'MODERATE',
       sosActive: false,
-      ambulanceStatus: 'idle'
+      ambulanceStatus: 'idle',
     });
   };
 
@@ -155,20 +176,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let timer: ReturnType<typeof setTimeout>;
     if (emergencyState.sosActive && emergencyState.ambulanceStatus === 'dispatched') {
       timer = setTimeout(() => {
-        setEmergencyState(prev => ({
+        setEmergencyState((prev) => ({
           ...prev,
           ambulanceStatus: 'en_route',
           ambulanceEtaMinutes: 5,
-          ambulanceDistanceKm: 2.8
+          ambulanceDistanceKm: 2.8,
         }));
       }, 5000);
     } else if (emergencyState.sosActive && emergencyState.ambulanceStatus === 'en_route') {
       timer = setTimeout(() => {
-        setEmergencyState(prev => ({
+        setEmergencyState((prev) => ({
           ...prev,
           ambulanceStatus: 'arrived',
           ambulanceEtaMinutes: 0,
-          ambulanceDistanceKm: 0
+          ambulanceDistanceKm: 0,
         }));
       }, 10000);
     }
@@ -190,7 +211,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addNotification,
         emergencyState,
         triggerSOS,
-        resetSOS
+        resetSOS,
       }}
     >
       {children}

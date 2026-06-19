@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { Settings, Shield, Bell, Eye, EyeOff, Check, AlertCircle, Laptop, RefreshCw } from 'lucide-react';
+import { Settings, Shield, Bell, Eye, EyeOff, Check, AlertCircle, Laptop, RefreshCw, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppMode } from '../context/AppModeContext';
 import { resetDemoData, seedDemoDatabase, clearDemoNotifications, restoreFactoryDefaults } from '../services/mockData';
+import { resetDemoDb } from '../services/_demoDb';
 
 export const SettingsPage: React.FC = () => {
-  const { mode, setMode } = useAppMode();
+  const { isDemoMode } = useAppMode();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'appearance' | 'security' | 'notifications'>('general');
 
   // General Settings
   const [language, setLanguage] = useState('en');
-  
+
   // Appearance Settings
   const [darkMode, setDarkMode] = useState(true);
 
@@ -22,7 +23,6 @@ export const SettingsPage: React.FC = () => {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  
   const [securityLoading, setSecurityLoading] = useState(false);
   const [securitySuccess, setSecuritySuccess] = useState(false);
   const [securityError, setSecurityError] = useState<string | null>(null);
@@ -33,6 +33,11 @@ export const SettingsPage: React.FC = () => {
   const [pushEnabled, setPushEnabled] = useState(true);
   const [pushSounds, setPushSounds] = useState(true);
 
+  const showSuccess = (msg: string) => {
+    setSuccessMessage(msg);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
   const getPasswordStrength = (pass: string) => {
     let score = 0;
     if (!pass) return { label: 'Very Weak', color: 'bg-red-500/20', width: '0%' };
@@ -40,19 +45,12 @@ export const SettingsPage: React.FC = () => {
     if (/[0-9]/.test(pass)) score += 1;
     if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1;
     if (/[^A-Za-z0-9]/.test(pass)) score += 1;
-
     switch (score) {
-      case 0:
-      case 1:
-        return { label: 'Weak', color: 'bg-red-500', width: '25%' };
-      case 2:
-        return { label: 'Fair', color: 'bg-orange-500', width: '50%' };
-      case 3:
-        return { label: 'Good', color: 'bg-amber-400', width: '75%' };
-      case 4:
-        return { label: 'Strong', color: 'bg-emerald-400', width: '100%' };
-      default:
-        return { label: 'Weak', color: 'bg-red-500', width: '25%' };
+      case 0: case 1: return { label: 'Weak', color: 'bg-red-500', width: '25%' };
+      case 2: return { label: 'Fair', color: 'bg-orange-500', width: '50%' };
+      case 3: return { label: 'Good', color: 'bg-amber-400', width: '75%' };
+      case 4: return { label: 'Strong', color: 'bg-emerald-400', width: '100%' };
+      default: return { label: 'Weak', color: 'bg-red-500', width: '25%' };
     }
   };
 
@@ -62,26 +60,13 @@ export const SettingsPage: React.FC = () => {
     e.preventDefault();
     setSecurityError(null);
     setSecuritySuccess(false);
-
-    if (newPassword.length < 6) {
-      setSecurityError('New password must be at least 6 characters long.');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setSecurityError('New passwords do not match.');
-      return;
-    }
-
+    if (newPassword.length < 6) { setSecurityError('New password must be at least 6 characters long.'); return; }
+    if (newPassword !== confirmPassword) { setSecurityError('New passwords do not match.'); return; }
     setSecurityLoading(true);
-
-    // Simulate API request
     setTimeout(() => {
       setSecurityLoading(false);
       setSecuritySuccess(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
       setTimeout(() => setSecuritySuccess(false), 3000);
     }, 1200);
   };
@@ -110,42 +95,21 @@ export const SettingsPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Navigation Tabs */}
         <div className="md:col-span-1 glass-card p-4 rounded-2xl border border-white/5 space-y-1.5 h-fit">
-          <button
-            onClick={() => setActiveTab('general')}
-            className={`w-full text-left px-3 py-2.5 text-xs rounded-xl transition-all flex items-center gap-2.5 font-medium ${
-              activeTab === 'general' ? 'bg-white/5 text-cyan-400 font-semibold' : 'text-slate-400 hover:bg-white/[0.01]'
-            }`}
-          >
-            <Laptop className="w-4 h-4" />
-            <span>General</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('appearance')}
-            className={`w-full text-left px-3 py-2.5 text-xs rounded-xl transition-all flex items-center gap-2.5 font-medium ${
-              activeTab === 'appearance' ? 'bg-white/5 text-cyan-400 font-semibold' : 'text-slate-400 hover:bg-white/[0.01]'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            <span>Appearance</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('security')}
-            className={`w-full text-left px-3 py-2.5 text-xs rounded-xl transition-all flex items-center gap-2.5 font-medium ${
-              activeTab === 'security' ? 'bg-white/5 text-cyan-400 font-semibold' : 'text-slate-400 hover:bg-white/[0.01]'
-            }`}
-          >
-            <Shield className="w-4 h-4" />
-            <span>Security</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('notifications')}
-            className={`w-full text-left px-3 py-2.5 text-xs rounded-xl transition-all flex items-center gap-2.5 font-medium ${
-              activeTab === 'notifications' ? 'bg-white/5 text-cyan-400 font-semibold' : 'text-slate-400 hover:bg-white/[0.01]'
-            }`}
-          >
-            <Bell className="w-4 h-4" />
-            <span>Notifications</span>
-          </button>
+          {(['general', 'appearance', 'security', 'notifications'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`w-full text-left px-3 py-2.5 text-xs rounded-xl transition-all flex items-center gap-2.5 font-medium ${
+                activeTab === tab ? 'bg-white/5 text-cyan-400 font-semibold' : 'text-slate-400 hover:bg-white/[0.01]'
+              }`}
+            >
+              {tab === 'general' && <Laptop className="w-4 h-4" />}
+              {tab === 'appearance' && <Settings className="w-4 h-4" />}
+              {tab === 'security' && <Shield className="w-4 h-4" />}
+              {tab === 'notifications' && <Bell className="w-4 h-4" />}
+              <span className="capitalize">{tab}</span>
+            </button>
+          ))}
         </div>
 
         {/* Tab Content Panels */}
@@ -177,41 +141,29 @@ export const SettingsPage: React.FC = () => {
                   </select>
                 </div>
 
-                {/* App Mode Switcher */}
+                {/* Application Mode — Read-only indicator */}
                 <div className="space-y-2 pt-4 border-t border-white/5">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Application Telemetry Mode</label>
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => {
-                        setMode('demo');
-                        setSuccessMessage('Switched to Demo Presentation Mode.');
-                        setTimeout(() => setSuccessMessage(null), 3000);
-                      }}
-                      className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                        mode === 'demo'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
-                          : 'bg-white/5 text-slate-400 border-transparent hover:bg-white/10'
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Application Mode</label>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border ${
+                        isDemoMode
+                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                          : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
                       }`}
                     >
-                      Demo Presentation Mode
-                    </button>
-                    <button
-                      onClick={() => {
-                        setMode('live');
-                        setSuccessMessage('Switched to Live Backend API Mode.');
-                        setTimeout(() => setSuccessMessage(null), 3000);
-                      }}
-                      className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                        mode === 'live'
-                          ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
-                          : 'bg-white/5 text-slate-400 border-transparent hover:bg-white/10'
-                      }`}
-                    >
-                      Live Backend API Mode
-                    </button>
+                      <span className={`w-2 h-2 rounded-full ${isDemoMode ? 'bg-amber-400 animate-pulse' : 'bg-cyan-400'}`} />
+                      {isDemoMode ? 'Demo Mode Active' : 'Live Production Mode'}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                      <Lock className="w-3 h-3" />
+                      <span>Set via <code className="bg-white/5 px-1 rounded text-slate-400">VITE_DEMO_MODE</code> env variable</span>
+                    </div>
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1">
-                    Demo Mode uses rich local storage telemetry. Live Mode connects to MongoDB and Express services.
+                    {isDemoMode
+                      ? 'Running in Demo Mode. No requests are sent to Railway. All data is local.'
+                      : 'Running in Production Mode. Authenticated via JWT with MongoDB on Railway.'}
                   </p>
                 </div>
 
@@ -235,8 +187,8 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Demo Mode Data Operations */}
-                {mode === 'demo' && (
+                {/* Demo Mode Data Operations — shown only when running in demo mode */}
+                {isDemoMode && (
                   <div className="space-y-3 pt-6 border-t border-white/5">
                     <div>
                       <h4 className="text-xs font-bold text-slate-300">Demo Telemetry Controls</h4>
@@ -245,44 +197,28 @@ export const SettingsPage: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       <button
                         type="button"
-                        onClick={() => {
-                          resetDemoData();
-                          setSuccessMessage('Demo telemetry data has been reset to defaults.');
-                          setTimeout(() => setSuccessMessage(null), 3000);
-                        }}
+                        onClick={() => { resetDemoData(); resetDemoDb(); showSuccess('Demo telemetry data has been reset to defaults.'); }}
                         className="flex items-center justify-center px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 text-xs rounded-xl font-semibold transition-all"
                       >
                         Reset Demo Data
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          seedDemoDatabase();
-                          setSuccessMessage('Generated additional telemetry cases successfully.');
-                          setTimeout(() => setSuccessMessage(null), 3000);
-                        }}
+                        onClick={() => { seedDemoDatabase(); showSuccess('Generated additional telemetry cases successfully.'); }}
                         className="flex items-center justify-center px-4 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 text-xs rounded-xl font-semibold transition-all"
                       >
                         Seed Demo Database
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          clearDemoNotifications();
-                          setSuccessMessage('Demo notification panel cleared.');
-                          setTimeout(() => setSuccessMessage(null), 3000);
-                        }}
+                        onClick={() => { clearDemoNotifications(); showSuccess('Demo notification panel cleared.'); }}
                         className="flex items-center justify-center px-4 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 text-xs rounded-xl font-semibold transition-all"
                       >
                         Clear Notifications
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          restoreFactoryDefaults();
-                          setSuccessMessage('Factory data successfully restored.');
-                          setTimeout(() => setSuccessMessage(null), 3000);
-                        }}
+                        onClick={() => { restoreFactoryDefaults(); showSuccess('Factory data successfully restored.'); }}
                         className="flex items-center justify-center px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 text-xs rounded-xl font-semibold transition-all"
                       >
                         Restore Factory Data
@@ -302,10 +238,8 @@ export const SettingsPage: React.FC = () => {
                 className="glass-card p-6 rounded-2xl border border-white/5 space-y-6"
               >
                 <div className="border-b border-white/5 pb-2">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-sans">Appearance & Theme</h3>
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-sans">Appearance &amp; Theme</h3>
                 </div>
-
-                {/* Dark Mode Toggle */}
                 <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.01] border border-white/5">
                   <div>
                     <h4 className="text-xs font-bold text-slate-200">Dark Mode Accent Background</h4>
@@ -336,119 +270,61 @@ export const SettingsPage: React.FC = () => {
                 </div>
 
                 {securitySuccess && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-2.5 text-xs text-emerald-400"
-                  >
+                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                    className="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20 flex items-center gap-2.5 text-xs text-emerald-400">
                     <Check className="w-4 h-4 animate-bounce" />
                     <span>Password updated successfully!</span>
                   </motion.div>
                 )}
 
                 {securityError && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="p-3 rounded-xl bg-red-500/5 border border-red-500/20 flex items-center gap-2.5 text-xs text-red-400"
-                  >
+                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                    className="p-3 rounded-xl bg-red-500/5 border border-red-500/20 flex items-center gap-2.5 text-xs text-red-400">
                     <AlertCircle className="w-4 h-4" />
                     <span>{securityError}</span>
                   </motion.div>
                 )}
 
                 <form onSubmit={handlePasswordChange} className="space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Current Password</label>
-                    <div className="relative flex items-center">
-                      <input
-                        type={showCurrent ? 'text' : 'password'}
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full glass-input pr-10 py-2 text-xs"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCurrent(!showCurrent)}
-                        className="absolute right-3 p-1.5 text-slate-500 hover:text-slate-300 transition-all"
-                      >
-                        {showCurrent ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">New Password</label>
-                    <div className="relative flex items-center">
-                      <input
-                        type={showNew ? 'text' : 'password'}
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full glass-input pr-10 py-2 text-xs"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNew(!showNew)}
-                        className="absolute right-3 p-1.5 text-slate-500 hover:text-slate-300 transition-all"
-                      >
-                        {showNew ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
-                    </div>
-
-                    {/* Password Strength Indicator */}
-                    {newPassword && (
-                      <div className="space-y-1 pt-1">
-                        <div className="flex justify-between items-center text-[8px] text-slate-500 font-bold uppercase tracking-wider">
-                          <span>Strength</span>
-                          <span className={strength.color.replace('bg-', 'text-')}>{strength.label}</span>
-                        </div>
-                        <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full ${strength.color} transition-all duration-300`}
-                            style={{ width: strength.width }}
-                          />
-                        </div>
+                  {[
+                    { label: 'Current Password', value: currentPassword, setValue: setCurrentPassword, show: showCurrent, setShow: setShowCurrent },
+                    { label: 'New Password', value: newPassword, setValue: setNewPassword, show: showNew, setShow: setShowNew },
+                    { label: 'Confirm New Password', value: confirmPassword, setValue: setConfirmPassword, show: showConfirm, setShow: setShowConfirm },
+                  ].map(({ label, value, setValue, show, setShow }) => (
+                    <div key={label} className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">{label}</label>
+                      <div className="relative flex items-center">
+                        <input
+                          type={show ? 'text' : 'password'}
+                          value={value}
+                          onChange={(e) => setValue(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full glass-input pr-10 py-2 text-xs"
+                          required
+                        />
+                        <button type="button" onClick={() => setShow(!show)}
+                          className="absolute right-3 p-1.5 text-slate-500 hover:text-slate-300 transition-all">
+                          {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
                       </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase">Confirm New Password</label>
-                    <div className="relative flex items-center">
-                      <input
-                        type={showConfirm ? 'text' : 'password'}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full glass-input pr-10 py-2 text-xs"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirm(!showConfirm)}
-                        className="absolute right-3 p-1.5 text-slate-500 hover:text-slate-300 transition-all"
-                      >
-                        {showConfirm ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                      </button>
+                      {label === 'New Password' && newPassword && (
+                        <div className="space-y-1 pt-1">
+                          <div className="flex justify-between items-center text-[8px] text-slate-500 font-bold uppercase tracking-wider">
+                            <span>Strength</span>
+                            <span className={strength.color.replace('bg-', 'text-')}>{strength.label}</span>
+                          </div>
+                          <div className="h-0.5 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div className={`h-full ${strength.color} transition-all duration-300`} style={{ width: strength.width }} />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={securityLoading}
-                    className="glass-btn-primary w-fit ml-auto mt-4 px-6 py-2.5 text-xs font-semibold"
-                  >
-                    {securityLoading ? (
-                      <span className="flex items-center gap-1.5">
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Updating...
-                      </span>
-                    ) : (
-                      'Update Password'
-                    )}
+                  ))}
+                  <button type="submit" disabled={securityLoading}
+                    className="glass-btn-primary w-fit ml-auto mt-4 px-6 py-2.5 text-xs font-semibold">
+                    {securityLoading
+                      ? <span className="flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Updating...</span>
+                      : 'Update Password'}
                   </button>
                 </form>
               </motion.div>
@@ -465,67 +341,41 @@ export const SettingsPage: React.FC = () => {
                 <div className="border-b border-white/5 pb-2">
                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider font-sans">Notification Preferences</h3>
                 </div>
-
                 <div className="space-y-4">
-                  {/* Email Preferences */}
                   <div className="space-y-2.5">
                     <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Email Channels</h4>
                     <div className="space-y-2">
-                      <label className="flex items-center gap-3 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={emailAlerts}
-                          onChange={(e) => setEmailAlerts(e.target.checked)}
-                          className="rounded border-white/10 bg-slate-850 text-cyan-500 focus:ring-0 w-3.5 h-3.5"
-                        />
-                        <div className="text-left">
-                          <p className="text-xs font-bold text-slate-200">Critical Medical Alerts</p>
-                          <p className="text-[9px] text-slate-500 mt-0.5">Receive immediate diagnostic triggers or high risk vitals notifications.</p>
-                        </div>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={emailNews}
-                          onChange={(e) => setEmailNews(e.target.checked)}
-                          className="rounded border-white/10 bg-slate-850 text-cyan-500 focus:ring-0 w-3.5 h-3.5"
-                        />
-                        <div className="text-left">
-                          <p className="text-xs font-bold text-slate-200">Weekly Wellness Summary</p>
-                          <p className="text-[9px] text-slate-500 mt-0.5">Get a comprehensive clinical report analyzer review emails.</p>
-                        </div>
-                      </label>
+                      {[
+                        { checked: emailAlerts, set: setEmailAlerts, label: 'Critical Medical Alerts', desc: 'Receive immediate diagnostic triggers or high risk vitals notifications.' },
+                        { checked: emailNews, set: setEmailNews, label: 'Weekly Wellness Summary', desc: 'Get a comprehensive clinical report analyzer review emails.' },
+                      ].map(({ checked, set, label, desc }) => (
+                        <label key={label} className="flex items-center gap-3 cursor-pointer select-none">
+                          <input type="checkbox" checked={checked} onChange={(e) => set(e.target.checked)}
+                            className="rounded border-white/10 bg-slate-850 text-cyan-500 focus:ring-0 w-3.5 h-3.5" />
+                          <div className="text-left">
+                            <p className="text-xs font-bold text-slate-200">{label}</p>
+                            <p className="text-[9px] text-slate-500 mt-0.5">{desc}</p>
+                          </div>
+                        </label>
+                      ))}
                     </div>
                   </div>
-
-                  {/* Push Preferences */}
                   <div className="space-y-2.5 pt-4 border-t border-white/5">
                     <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Push Delivery</h4>
                     <div className="space-y-2">
-                      <label className="flex items-center gap-3 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={pushEnabled}
-                          onChange={(e) => setPushEnabled(e.target.checked)}
-                          className="rounded border-white/10 bg-slate-850 text-cyan-500 focus:ring-0 w-3.5 h-3.5"
-                        />
-                        <div className="text-left">
-                          <p className="text-xs font-bold text-slate-200">Enable In-App Banners</p>
-                          <p className="text-[9px] text-slate-500 mt-0.5">Show notifications when prescription edits or queue updates trigger.</p>
-                        </div>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={pushSounds}
-                          onChange={(e) => setPushSounds(e.target.checked)}
-                          className="rounded border-white/10 bg-slate-850 text-cyan-500 focus:ring-0 w-3.5 h-3.5"
-                        />
-                        <div className="text-left">
-                          <p className="text-xs font-bold text-slate-200">Alert Sound Playback</p>
-                          <p className="text-[9px] text-slate-500 mt-0.5">Play dynamic acoustic indicators on incoming emergency actions.</p>
-                        </div>
-                      </label>
+                      {[
+                        { checked: pushEnabled, set: setPushEnabled, label: 'Enable In-App Banners', desc: 'Show notifications when prescription edits or queue updates trigger.' },
+                        { checked: pushSounds, set: setPushSounds, label: 'Alert Sound Playback', desc: 'Play dynamic acoustic indicators on incoming emergency actions.' },
+                      ].map(({ checked, set, label, desc }) => (
+                        <label key={label} className="flex items-center gap-3 cursor-pointer select-none">
+                          <input type="checkbox" checked={checked} onChange={(e) => set(e.target.checked)}
+                            className="rounded border-white/10 bg-slate-850 text-cyan-500 focus:ring-0 w-3.5 h-3.5" />
+                          <div className="text-left">
+                            <p className="text-xs font-bold text-slate-200">{label}</p>
+                            <p className="text-[9px] text-slate-500 mt-0.5">{desc}</p>
+                          </div>
+                        </label>
+                      ))}
                     </div>
                   </div>
                 </div>

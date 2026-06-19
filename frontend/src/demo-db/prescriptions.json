@@ -1,0 +1,70 @@
+[
+  {
+    "id": "pres_01",
+    "patientId": "user_pat_01",
+    "patientName": "Anshuman Das",
+    "doctorId": "user_doc_01",
+    "doctorName": "Dr. Sarika Sharma",
+    "date": "2026-06-04",
+    "status": "active",
+    "medicines": [
+      { "medicineName": "Lisinopril", "dosage": "10mg", "frequency": "Once daily (morning)", "duration": "90 days" },
+      { "medicineName": "Atorvastatin", "dosage": "20mg", "frequency": "Once daily (bedtime)", "duration": "90 days" }
+    ],
+    "instructions": "Take blood pressure readings at least twice daily and log them in the Medibridge tracker."
+  },
+  {
+    "id": "pres_02",
+    "patientId": "user_pat_01",
+    "patientName": "Anshuman Das",
+    "doctorId": "user_doc_01",
+    "doctorName": "Dr. Sarika Sharma",
+    "date": "2026-05-10",
+    "status": "completed",
+    "medicines": [
+      { "medicineName": "Amoxicillin", "dosage": "500mg", "frequency": "Thrice daily", "duration": "7 days" }
+    ],
+    "instructions": "Complete the full course. Take with food."
+  },
+  {
+    "id": "pres_03",
+    "patientId": "user_pat_02",
+    "patientName": "Priya Mehta",
+    "doctorId": "user_doc_01",
+    "doctorName": "Dr. Sarika Sharma",
+    "date": "2026-06-09",
+    "status": "active",
+    "medicines": [
+      { "medicineName": "Levothyroxine", "dosage": "50mcg", "frequency": "Once daily (morning, empty stomach)", "duration": "180 days" }
+    ],
+    "instructions": "Take 30 minutes before breakfast. Do not take with calcium or iron supplements."
+  },
+  {
+    "id": "pres_04",
+    "patientId": "user_pat_03",
+    "patientName": "Rahul Verma",
+    "doctorId": "user_doc_02",
+    "doctorName": "Dr. Rajiv Patel",
+    "date": "2026-06-01",
+    "status": "active",
+    "medicines": [
+      { "medicineName": "Metformin", "dosage": "500mg", "frequency": "Twice daily (with meals)", "duration": "90 days" },
+      { "medicineName": "Glimepiride", "dosage": "1mg", "frequency": "Once daily (breakfast)", "duration": "90 days" }
+    ],
+    "instructions": "Monitor blood glucose levels twice daily. Report readings below 70 mg/dL immediately."
+  },
+  {
+    "id": "pres_05",
+    "patientId": "user_pat_04",
+    "patientName": "Sunita Gupta",
+    "doctorId": "user_doc_01",
+    "doctorName": "Dr. Sarika Sharma",
+    "date": "2026-04-15",
+    "status": "expired",
+    "medicines": [
+      { "medicineName": "Cetirizine", "dosage": "10mg", "frequency": "Once daily (bedtime)", "duration": "30 days" },
+      { "medicineName": "Montelukast", "dosage": "10mg", "frequency": "Once daily (evening)", "duration": "30 days" }
+    ],
+    "instructions": "Avoid known allergens. Discontinue if rash develops."
+  }
+]

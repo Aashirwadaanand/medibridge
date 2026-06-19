@@ -1,0 +1,57 @@
+[
+  {
+    "id": "hosp_01",
+    "name": "Apollo Hospital Delhi",
+    "location": "Connaught Place, New Delhi",
+    "address": "456 Outer Circle, Connaught Place, New Delhi, 110001",
+    "contactNumber": "+91 98765 43210",
+    "specialists": ["Cardiology", "Neurology", "Oncology", "Emergency Medicine", "Pediatrics"],
+    "bedsAvailable": 42,
+    "emergencyAvailable": true,
+    "rating": 4.8
+  },
+  {
+    "id": "hosp_02",
+    "name": "Fortis Hospital Mumbai",
+    "location": "Mulund West, Mumbai",
+    "address": "Mulund Goregaon Link Road, Mumbai, Maharashtra 400078",
+    "contactNumber": "+91 22 6767 8000",
+    "specialists": ["Gastroenterology", "Cardiology", "Orthopedics", "Dermatology"],
+    "bedsAvailable": 28,
+    "emergencyAvailable": true,
+    "rating": 4.6
+  },
+  {
+    "id": "hosp_03",
+    "name": "Max Super Speciality Bangalore",
+    "location": "Indiranagar, Bangalore",
+    "address": "No. 49, 1st Main Road, Indiranagar, Bangalore, Karnataka 560038",
+    "contactNumber": "+91 80 4387 4444",
+    "specialists": ["Endocrinology", "Pulmonology", "Neurology", "Oncology"],
+    "bedsAvailable": 35,
+    "emergencyAvailable": true,
+    "rating": 4.7
+  },
+  {
+    "id": "hosp_04",
+    "name": "Medanta Medicentre Gurgaon",
+    "location": "Sector 38, Gurgaon",
+    "address": "CH Baktawar Singh Road, Sector 38, Gurugram, Haryana 122001",
+    "contactNumber": "+91 124 4141 414",
+    "specialists": ["Cardiology", "Neurology", "Gynecology", "Orthopedics", "Transplant"],
+    "bedsAvailable": 61,
+    "emergencyAvailable": true,
+    "rating": 4.9
+  },
+  {
+    "id": "hosp_05",
+    "name": "Sir Ganga Ram Hospital Delhi",
+    "location": "Rajinder Nagar, New Delhi",
+    "address": "Rajinder Nagar, New Delhi, 110060",
+    "contactNumber": "+91 11 2575 0000",
+    "specialists": ["General Medicine", "Ophthalmology", "ENT", "Dermatology"],
+    "bedsAvailable": 19,
+    "emergencyAvailable": false,
+    "rating": 4.5
+  }
+]

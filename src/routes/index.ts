@@ -18,7 +18,7 @@ const router = Router();
 router.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'success',
-    message: 'MEDIBRIDGE Server is running healthy. VERSION-17-JUNE',
+    message: 'MEDIBRIDGE Server is running healthy.',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });

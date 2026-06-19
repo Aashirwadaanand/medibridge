@@ -43,6 +43,11 @@ app.use(express.json({ limit: '10mb' }));
 
 // Parsing URL-encoded body payloads
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.get('/test-root', (_req, res) => {
+  res.json({
+    message: 'ROOT TEST WORKS'
+  });
+});
 
 // Mount all core api routes under /api namespace
 app.use('/api', apiRouter);

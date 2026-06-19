@@ -152,7 +152,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     if (emergencyState.sosActive && emergencyState.ambulanceStatus === 'dispatched') {
       timer = setTimeout(() => {
         setEmergencyState(prev => ({

@@ -69,10 +69,8 @@ export const PatientDashboard: React.FC = () => {
   // Submit Patient screening request
   const handleRequestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reqDate || !reqTime) {
-      alert('Please fill in preferred date and time.');
-      return;
-    }
+    const finalDate = reqDate || new Date(Date.now() + 86400000).toISOString().split('T')[0]; // Tomorrow
+    const finalTime = reqTime || '10:00 AM';
 
     const newReq = {
       id: `req_${Date.now()}`,
@@ -81,8 +79,8 @@ export const PatientDashboard: React.FC = () => {
       villageId: currentUser.villageId || 'vil_01',
       screeningType: reqType,
       symptoms: reqSymptoms,
-      preferredDate: reqDate,
-      preferredTime: reqTime,
+      preferredDate: finalDate,
+      preferredTime: finalTime,
       notes: reqNotes,
       status: 'requested',
       assignedChwId: '',
@@ -95,7 +93,7 @@ export const PatientDashboard: React.FC = () => {
     list.unshift(newReq);
     localStorage.setItem('demo_db_screening_requests', JSON.stringify(list));
 
-    setReqSuccess('Your community screening request has been successfully submitted to your ASHA worker!');
+    setReqSuccess(`Your community screening request is submitted successfully! Ramesh Kumar (your local ASHA worker) has received your request on their Outreach Dashboard and will schedule your home visit shortly.`);
     setReqSymptoms('');
     setReqDate('');
     setReqTime('');
@@ -104,7 +102,7 @@ export const PatientDashboard: React.FC = () => {
     fetchScreeningsAndRequests();
     window.dispatchEvent(new Event('medibridge-demo-refresh'));
 
-    setTimeout(() => setReqSuccess(null), 5000);
+    setTimeout(() => setReqSuccess(null), 8000);
   };
 
   // Chronological screenings logs

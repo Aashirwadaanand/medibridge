@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Building, Clock, Plus, Trash2, CalendarRange, Check, X, AlertCircle, CalendarDays, CheckCircle2 } from 'lucide-react';
+import { 
+  Building, Clock, Plus, Trash2, CalendarRange, Check, X, AlertCircle, 
+  CalendarDays, CheckCircle2, FileText 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import appointmentService from '../services/appointmentService';
-import { Appointment } from '../types';
+import reportService from '../services/reportService';
+import { Appointment, MedicalReport } from '../types';
 import { useApp } from '../context/AppContext';
 import { TableSkeleton, SuccessState } from '../components/common/Loader';
 
 export const AppointmentsPage: React.FC = () => {
   const { currentUser, addNotification } = useApp();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [reports, setReports] = useState<MedicalReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -27,16 +32,23 @@ export const AppointmentsPage: React.FC = () => {
   // Doctor completion note states
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [consultNotes, setConsultNotes] = useState('');
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null);
 
   const fetchAppointments = async () => {
     try {
-      const data = await appointmentService.getAppointments();
+      const [apptData, reportsData] = await Promise.all([
+        appointmentService.getAppointments(),
+        reportService.getReports()
+      ]);
+      
+      setReports(reportsData);
+
       if (currentUser.role === 'doctor') {
         // Filter appointments assigned to this doctor
-        setAppointments(data.filter(a => a.doctorId === currentUser.id));
+        setAppointments(apptData.filter(a => a.doctorId === currentUser.id));
       } else {
         // Filter appointments requested by this patient
-        setAppointments(data.filter(a => a.patientId === currentUser.id));
+        setAppointments(apptData.filter(a => a.patientId === currentUser.id));
       }
     } catch (err) {
       console.error(err);
@@ -323,7 +335,7 @@ export const AppointmentsPage: React.FC = () => {
                     className="p-4 rounded-xl bg-white/[0.01] border border-white/5 flex flex-col gap-3 transition-colors hover:bg-white/[0.02]"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                      <div className="space-y-1">
+                      <div className="space-y-1 flex-1">
                         <div className="flex items-center gap-2">
                           <h4 className="text-xs font-bold text-slate-200">
                             {currentUser.role === 'doctor' ? `Patient: ${appt.patientName}` : `Doctor: ${appt.doctorName}`}
@@ -350,6 +362,61 @@ export const AppointmentsPage: React.FC = () => {
                           <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5 text-slate-650" /> {new Date(appt.dateTime).toLocaleString()}</span>
                           <span className="flex items-center gap-1"><Building className="w-3.5 h-3.5 text-slate-650" /> {appt.hospitalName}</span>
                         </div>
+
+                        {/* Diagnostic Reports Viewer for Doctors */}
+                        {currentUser.role === 'doctor' && (
+                          <div className="mt-4 pt-3.5 border-t border-white/[0.04] space-y-2 text-left font-sans text-xs">
+                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Patient Diagnostic Reports</span>
+                            {reports.filter(r => r.patientId === appt.patientId).length > 0 ? (
+                              <div className="space-y-1.5 mt-1.5">
+                                {reports.filter(r => r.patientId === appt.patientId).map(rep => {
+                                  const isExpanded = expandedReportId === rep.id;
+                                  return (
+                                    <div key={rep.id} className="p-2.5 bg-white/[0.01] border border-white/5 rounded-xl space-y-2">
+                                      <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-1.5 text-slate-200">
+                                          <FileText className="w-3.5 h-3.5 text-cyan-400" />
+                                          <span className="font-semibold text-[11px]">{rep.title}</span>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => setExpandedReportId(isExpanded ? null : rep.id)}
+                                          className="text-[9px] text-cyan-400 font-bold hover:underline flex items-center gap-0.5"
+                                        >
+                                          {isExpanded ? 'Hide Details' : 'View Report Vitals'}
+                                        </button>
+                                      </div>
+
+                                      {isExpanded && (
+                                        <div className="pt-2 border-t border-white/[0.02] space-y-2 text-[10px] text-slate-350 leading-relaxed bg-[#0b1120] p-2.5 rounded-lg border border-white/5">
+                                          {rep.parsedInsights ? (
+                                            <>
+                                              <p><strong className="text-slate-200">Summary:</strong> {rep.parsedInsights.summary}</p>
+                                              {rep.parsedInsights.criticalFindings?.length > 0 && (
+                                                <div className="mt-1.5">
+                                                  <strong className="text-amber-400 block text-[9px] uppercase tracking-wider">Critical Focus Metrics:</strong>
+                                                  <ul className="list-disc list-inside space-y-0.5 text-amber-300 font-mono">
+                                                    {rep.parsedInsights.criticalFindings.map((cf, idx) => (
+                                                      <li key={idx}>{cf}</li>
+                                                    ))}
+                                                  </ul>
+                                                </div>
+                                              )}
+                                            </>
+                                          ) : (
+                                            <p className="text-slate-500 italic">No parsed insights available for this report.</p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-slate-550 italic block">No uploaded lab files found for this patient.</span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Actions */}

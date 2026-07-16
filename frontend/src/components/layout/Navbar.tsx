@@ -14,7 +14,7 @@ interface NavbarProps {
   onOpenNotifications: () => void;
 }
 
-const ROLES = ['patient', 'doctor', 'hospital', 'admin'] as const;
+const ROLES = ['patient', 'chw', 'doctor', 'hospital', 'admin'] as const;
 
 export const Navbar: React.FC<NavbarProps> = ({ onOpenNotifications }) => {
   const { role, currentUser, unreadCount } = useApp();

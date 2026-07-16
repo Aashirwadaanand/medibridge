@@ -8,6 +8,9 @@ import { HydrationTracker, StepTracker, MedicationTickOff } from '../components/
 import { mockVitalsHistory } from '../services/mockData';
 import { CardSkeleton, ChartSkeleton } from '../components/common/Loader';
 import aiService from '../services/aiService';
+import screeningService from '../services/screeningService';
+import { Screening } from '../types';
+import { PatientTimeline } from '../components/screening/PatientTimeline';
 
 const mockSleepData = [
   { day: 'Mon', hours: 7.2 },
@@ -25,6 +28,16 @@ export const PatientDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [vitalsData, setVitalsData] = useState(mockVitalsHistory);
   const [activeChart, setActiveChart] = useState<'vitals' | 'sleep'>('vitals');
+  const [screenings, setScreenings] = useState<Screening[]>([]);
+
+  const fetchScreenings = async () => {
+    try {
+      const data = await screeningService.getScreenings();
+      setScreenings(data.filter(s => s.patientId === currentUser.id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // AI states
   const [loadingAI, setLoadingAI] = useState(true);
@@ -88,6 +101,7 @@ export const PatientDashboard: React.FC = () => {
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 950);
     fetchAIInsights();
+    fetchScreenings();
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
@@ -101,6 +115,7 @@ export const PatientDashboard: React.FC = () => {
     };
     const handleDemoRefresh = () => {
       fetchAIInsights();
+      fetchScreenings();
     };
 
     window.addEventListener('medibridge-vitals-update', handleVitalsUpdate);
@@ -342,6 +357,11 @@ export const PatientDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Rural Screening Triage Outcomes Timeline */}
+      {screenings.length > 0 && (
+        <PatientTimeline screenings={screenings} />
+      )}
     </div>
   );
 };

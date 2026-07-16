@@ -2,9 +2,8 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "CommonJS",
-    "lib": [
-      "ES2022"
-    ],
+    "types": ["node"],
+    "lib": ["ES2022"],
     "allowJs": true,
     "outDir": "./dist",
     "rootDir": "./src",
@@ -24,12 +23,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "uploads"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "uploads"]
 }

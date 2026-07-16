@@ -5,7 +5,7 @@ import { Spinner } from './Loader';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('patient' | 'doctor' | 'hospital' | 'pharmacy' | 'admin')[];
+  allowedRoles?: ('patient' | 'doctor' | 'hospital' | 'pharmacy' | 'admin' | 'chw')[];
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {

@@ -15,6 +15,8 @@ import hospitalsJson from '../demo-db/hospitals.json';
 import notificationsJson from '../demo-db/notifications.json';
 import reportsJson from '../demo-db/reports.json';
 import medicinesJson from '../demo-db/medicines.json';
+import screeningsJson from '../demo-db/screenings.json';
+import villagesJson from '../demo-db/villages.json';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -43,6 +45,8 @@ export function seedDemoDb(): void {
   localStorage.setItem(STORAGE.DEMO_DB.NOTIFICATIONS, JSON.stringify(notificationsJson));
   localStorage.setItem(STORAGE.DEMO_DB.REPORTS, JSON.stringify(reportsJson));
   localStorage.setItem(STORAGE.DEMO_DB.MEDICINES, JSON.stringify(medicinesJson));
+  localStorage.setItem(STORAGE.DEMO_DB.SCREENINGS, JSON.stringify(screeningsJson));
+  localStorage.setItem(STORAGE.DEMO_DB.VILLAGES, JSON.stringify(villagesJson));
   localStorage.setItem(STORAGE.DEMO_DB.SEEDED, 'true');
 }
 

@@ -15,7 +15,8 @@ import {
   ClipboardList,
   Building,
   LogOut,
-  History
+  History,
+  BarChart3
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
@@ -48,7 +49,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage }) =
         return [
           { id: 'doctor-dashboard', label: 'Doctor Dashboard', icon: <Stethoscope className="w-4 h-4" /> },
           { id: 'appointments', label: 'Patient Queue', icon: <Calendar className="w-4 h-4" /> },
-          { id: 'report-intel', label: 'Report Analyzer', icon: <FileText className="w-4 h-4" /> }
+          { id: 'report-intel', label: 'Report Analyzer', icon: <FileText className="w-4 h-4" /> },
+          { id: 'community-health-intel', label: 'Community Intelligence', icon: <BarChart3 className="w-4 h-4" /> }
         ];
       case 'hospital':
         return [
@@ -58,7 +60,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, setActivePage }) =
       case 'admin':
         return [
           { id: 'admin-dashboard', label: 'Admin Dashboard', icon: <Shield className="w-4 h-4" /> },
-          { id: 'system-telemetry', label: 'System Telemetry', icon: <Layers className="w-4 h-4" /> }
+          { id: 'system-telemetry', label: 'System Telemetry', icon: <Layers className="w-4 h-4" /> },
+          { id: 'community-health-intel', label: 'Community Intelligence', icon: <BarChart3 className="w-4 h-4" /> }
+        ];
+      case 'chw':
+        return [
+          { id: 'chw-dashboard', label: 'Rural Dashboard', icon: <Activity className="w-4 h-4" /> },
+          { id: 'community-health-intel', label: 'Community Intelligence', icon: <BarChart3 className="w-4 h-4" /> }
         ];
       default:
         return [];

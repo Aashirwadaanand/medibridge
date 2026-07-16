@@ -17,6 +17,8 @@ const PatientDashboard = lazy(() => import('./pages/PatientDashboard'));
 const DoctorDashboard = lazy(() => import('./pages/DoctorDashboard'));
 const HospitalDashboard = lazy(() => import('./pages/HospitalDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const ChwDashboard = lazy(() => import('./pages/ChwDashboard'));
+const CommunityHealthIntel = lazy(() => import('./pages/CommunityHealthIntel'));
 const EmergencyCenter = lazy(() => import('./pages/EmergencyCenter'));
 const SymptomChecker = lazy(() => import('./pages/SymptomChecker'));
 const HealthVault = lazy(() => import('./pages/HealthVault'));
@@ -51,6 +53,8 @@ const AppContent: React.FC<AppContentProps> = ({ defaultPage }) => {
       setActivePage('hospital-dashboard');
     } else if (role === 'admin') {
       setActivePage('admin-dashboard');
+    } else if (role === 'chw') {
+      setActivePage('chw-dashboard');
     }
   }, [role, defaultPage]);
 
@@ -64,6 +68,10 @@ const AppContent: React.FC<AppContentProps> = ({ defaultPage }) => {
         return <HospitalDashboard />;
       case 'admin-dashboard':
         return <AdminDashboard />;
+      case 'chw-dashboard':
+        return <ChwDashboard />;
+      case 'community-health-intel':
+        return <CommunityHealthIntel />;
       case 'emergency-center':
         return <EmergencyCenter />;
       case 'symptom-checker':
@@ -162,6 +170,14 @@ export const App: React.FC = () => {
                       element={
                         <ProtectedRoute allowedRoles={['admin']}>
                           <AppContent defaultPage="admin-dashboard" />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/chw"
+                      element={
+                        <ProtectedRoute allowedRoles={['chw']}>
+                          <AppContent defaultPage="chw-dashboard" />
                         </ProtectedRoute>
                       }
                     />

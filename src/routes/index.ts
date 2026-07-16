@@ -8,6 +8,7 @@ import medicineRoutes from './medicine.routes';
 import notificationRoutes from './notification.routes';
 import aiRoutes from './ai.routes';
 import adminRoutes from './admin.routes';
+import screeningRoutes from './screening.routes';
 
 const router = Router();
 
@@ -50,6 +51,9 @@ router.use('/ai', aiRoutes);
 
 // Mount administrative routes under '/admin'
 router.use('/admin', adminRoutes);
+
+// Mount screening routes under '/screenings'
+router.use('/screenings', screeningRoutes);
 
 export default router;
 

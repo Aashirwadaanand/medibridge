@@ -71,6 +71,7 @@ export const RegisterPage: React.FC = () => {
   const rolesList: { value: UserRole; label: string; description: string; icon: React.ReactNode }[] = [
     { value: 'patient', label: 'Patient', description: 'Access records & triage', icon: <Activity className="w-5 h-5" /> },
     { value: 'doctor', label: 'Doctor', description: 'Manage clinic queue', icon: <Stethoscope className="w-5 h-5" /> },
+    { value: 'chw', label: 'Health Worker', description: 'Screen rural patient vitals', icon: <Activity className="w-5 h-5" /> },
     { value: 'hospital', label: 'Hospital', description: 'Monitor beds & tools', icon: <Building className="w-5 h-5" /> },
     { value: 'admin', label: 'Admin', description: 'System setup & ops', icon: <Shield className="w-5 h-5" /> },
   ];

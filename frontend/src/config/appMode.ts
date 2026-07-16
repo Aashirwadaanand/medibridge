@@ -60,6 +60,8 @@ export const STORAGE = {
     NOTIFICATIONS: 'demo_db_notifications',
     REPORTS:       'demo_db_reports',
     MEDICINES:     'demo_db_medicines',
+    SCREENINGS:    'demo_db_screenings',
+    VILLAGES:      'demo_db_villages',
     SEEDED:        'demo_db_seeded',
   },
 } as const;

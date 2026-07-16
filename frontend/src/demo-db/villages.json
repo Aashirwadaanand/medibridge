@@ -1,0 +1,5 @@
+[
+  { "id": "vil_01", "name": "Rampur", "population": 450, "adults": 280 },
+  { "id": "vil_02", "name": "Lakshmipur", "population": 620, "adults": 390 },
+  { "id": "vil_03", "name": "Devgaon", "population": 380, "adults": 230 }
+]

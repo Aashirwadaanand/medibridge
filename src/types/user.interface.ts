@@ -1,6 +1,6 @@
 import { Document, Model } from 'mongoose';
 
-export type UserRole = 'patient' | 'doctor' | 'hospital' | 'pharmacy' | 'admin';
+export type UserRole = 'patient' | 'doctor' | 'hospital' | 'pharmacy' | 'admin' | 'chw';
 
 export interface IUser extends Document {
   name: string;

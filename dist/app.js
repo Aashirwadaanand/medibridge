@@ -44,7 +44,18 @@ else {
 app.use(express_1.default.json({ limit: '10mb' }));
 // Parsing URL-encoded body payloads
 app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
+app.get('/test-root', (_req, res) => {
+    res.json({
+        message: 'ROOT TEST WORKS'
+    });
+});
 // Mount all core api routes under /api namespace
+app.get('/', (_req, res) => {
+    res.json({
+        status: 'success',
+        message: 'MEDIBRIDGE Backend API is running 🚀'
+    });
+});
 app.use('/api', index_1.default);
 // Catch-all handler for 404 unmatched endpoints
 app.use((req, _res, next) => {

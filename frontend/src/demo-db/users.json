@@ -6,7 +6,8 @@
     "role": "patient",
     "token": "demo-jwt-patient-NOT-A-REAL-TOKEN",
     "createdAt": "2026-06-10T12:00:00Z",
-    "isActive": true
+    "isActive": true,
+    "villageId": "vil_01"
   },
   "doctor": {
     "id": "user_doc_01",
@@ -44,36 +45,65 @@
     "createdAt": "2026-06-01T07:15:00Z",
     "isActive": true
   },
+  "chw": {
+    "id": "user_chw_01",
+    "name": "Ramesh Kumar",
+    "email": "chw@medibridge.com",
+    "role": "chw",
+    "token": "demo-jwt-chw-NOT-A-REAL-TOKEN",
+    "createdAt": "2026-06-02T09:00:00Z",
+    "isActive": true
+  },
   "credentials": {
     "patient@medibridge.com": "patient123",
     "doctor@medibridge.com": "doctor123",
     "hospital@medibridge.com": "hospital123",
     "pharmacy@medibridge.com": "pharmacy123",
-    "admin@medibridge.com": "admin123"
+    "admin@medibridge.com": "admin123",
+    "chw@medibridge.com": "chw123",
+    "aditi@medibridge.com": "aditi123",
+    "priya@medibridge.com": "priya123",
+    "rahul@medibridge.com": "rahul123"
   },
   "emailToRole": {
     "patient@medibridge.com": "patient",
     "doctor@medibridge.com": "doctor",
     "hospital@medibridge.com": "hospital",
     "pharmacy@medibridge.com": "pharmacy",
-    "admin@medibridge.com": "admin"
+    "admin@medibridge.com": "admin",
+    "chw@medibridge.com": "chw",
+    "aditi@medibridge.com": "patient",
+    "priya@medibridge.com": "patient",
+    "rahul@medibridge.com": "patient"
   },
   "allUsers": [
     {
       "id": "user_pat_01", "name": "Anshuman Das", "email": "patient@medibridge.com",
-      "role": "patient", "createdAt": "2026-06-10T12:00:00Z", "isActive": true
+      "role": "patient", "createdAt": "2026-06-10T12:00:00Z", "isActive": true, "villageId": "vil_01"
     },
     {
       "id": "user_pat_02", "name": "Priya Mehta", "email": "priya.mehta@gmail.com",
-      "role": "patient", "createdAt": "2026-06-09T11:00:00Z", "isActive": true
+      "role": "patient", "createdAt": "2026-06-09T11:00:00Z", "isActive": true, "villageId": "vil_02"
     },
     {
       "id": "user_pat_03", "name": "Rahul Verma", "email": "rahul.verma@gmail.com",
-      "role": "patient", "createdAt": "2026-06-07T14:00:00Z", "isActive": true
+      "role": "patient", "createdAt": "2026-06-07T14:00:00Z", "isActive": true, "villageId": "vil_03"
     },
     {
       "id": "user_pat_04", "name": "Sunita Gupta", "email": "sunita.gupta@gmail.com",
-      "role": "patient", "createdAt": "2026-06-06T10:00:00Z", "isActive": false
+      "role": "patient", "createdAt": "2026-06-06T10:00:00Z", "isActive": false, "villageId": "vil_01"
+    },
+    {
+      "id": "user_pat_05", "name": "Aditi Sharma (Adolescent)", "email": "aditi@medibridge.com",
+      "role": "patient", "createdAt": "2026-07-01T12:00:00Z", "isActive": true, "villageId": "vil_02"
+    },
+    {
+      "id": "user_pat_06", "name": "Priya Patel (Pregnant)", "email": "priya@medibridge.com",
+      "role": "patient", "createdAt": "2026-07-02T12:00:00Z", "isActive": true, "villageId": "vil_03"
+    },
+    {
+      "id": "user_pat_07", "name": "Rahul Kumar (Child)", "email": "rahul@medibridge.com",
+      "role": "patient", "createdAt": "2026-07-03T12:00:00Z", "isActive": true, "villageId": "vil_01"
     },
     {
       "id": "user_doc_01", "name": "Dr. Sarika Sharma", "email": "doctor@medibridge.com",
@@ -94,6 +124,10 @@
     {
       "id": "user_adm_01", "name": "System Operations Control", "email": "admin@medibridge.com",
       "role": "admin", "createdAt": "2026-06-01T07:15:00Z", "isActive": true
+    },
+    {
+      "id": "user_chw_01", "name": "Ramesh Kumar", "email": "chw@medibridge.com",
+      "role": "chw", "createdAt": "2026-06-02T09:00:00Z", "isActive": true
     }
   ]
 }

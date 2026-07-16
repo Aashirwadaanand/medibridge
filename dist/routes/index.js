@@ -13,6 +13,7 @@ const medicine_routes_1 = __importDefault(require("./medicine.routes"));
 const notification_routes_1 = __importDefault(require("./notification.routes"));
 const ai_routes_1 = __importDefault(require("./ai.routes"));
 const admin_routes_1 = __importDefault(require("./admin.routes"));
+const screening_routes_1 = __importDefault(require("./screening.routes"));
 const router = (0, express_1.Router)();
 /**
  * Health Check Endpoint
@@ -44,4 +45,6 @@ router.use('/notifications', notification_routes_1.default);
 router.use('/ai', ai_routes_1.default);
 // Mount administrative routes under '/admin'
 router.use('/admin', admin_routes_1.default);
+// Mount screening routes under '/screenings'
+router.use('/screenings', screening_routes_1.default);
 exports.default = router;

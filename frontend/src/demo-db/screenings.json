@@ -1,0 +1,148 @@
+[
+  {
+    "id": "scr_01",
+    "patientId": "user_pat_01",
+    "patientName": "Anshuman Das",
+    "chwId": "user_chw_01",
+    "chwName": "Ramesh Kumar",
+    "screeningType": "Hypertension/Diabetes",
+    "readings": {
+      "systolic": 150,
+      "diastolic": 95,
+      "bloodSugar": 180,
+      "bloodSugarType": "random"
+    },
+    "riskClassifications": {
+      "hypertension": "Stage 1",
+      "diabetes": "Prediabetes",
+      "overall": "HIGH"
+    },
+    "status": "pending",
+    "createdAt": "2026-07-15T09:00:00.000Z"
+  },
+  {
+    "id": "scr_02",
+    "patientId": "user_pat_02",
+    "patientName": "Priya Mehta",
+    "chwId": "user_chw_01",
+    "chwName": "Ramesh Kumar",
+    "screeningType": "Hypertension/Diabetes",
+    "readings": {
+      "systolic": 165,
+      "diastolic": 102,
+      "bloodSugar": 240,
+      "bloodSugarType": "fasting"
+    },
+    "riskClassifications": {
+      "hypertension": "Stage 2",
+      "diabetes": "Diabetes",
+      "overall": "CRITICAL"
+    },
+    "status": "reviewed",
+    "doctorId": "user_doc_01",
+    "doctorName": "Dr. Sarika Sharma",
+    "doctorNotes": "Critical levels observed. Prescribed immediate pharmacological therapy, referred for weekly clinic monitoring, and instructed low carbohydrate and sodium intake.",
+    "actionTaken": "medication",
+    "followUpDate": "2026-07-23T10:00:00.000Z",
+    "followUpStatus": "pending",
+    "createdAt": "2026-07-14T08:30:00.000Z"
+  },
+  {
+    "id": "scr_03",
+    "patientId": "user_pat_05",
+    "patientName": "Aditi Sharma (Adolescent)",
+    "chwId": "user_chw_01",
+    "chwName": "Ramesh Kumar",
+    "screeningType": "Anemia",
+    "readings": {
+      "hemoglobin": 10.8,
+      "isPregnant": false,
+      "ageGroup": "adolescent",
+      "weight": 42,
+      "ifaStarted": false
+    },
+    "riskClassifications": {
+      "anemia": "Moderate",
+      "overall": "HIGH"
+    },
+    "status": "pending",
+    "createdAt": "2026-07-15T10:00:00.000Z"
+  },
+  {
+    "id": "scr_04",
+    "patientId": "user_pat_06",
+    "patientName": "Priya Patel (Pregnant)",
+    "chwId": "user_chw_01",
+    "chwName": "Ramesh Kumar",
+    "screeningType": "Anemia",
+    "readings": {
+      "hemoglobin": 6.5,
+      "isPregnant": true,
+      "trimester": 2,
+      "ageGroup": "adult",
+      "weight": 58,
+      "ifaStarted": false
+    },
+    "riskClassifications": {
+      "anemia": "Severe",
+      "overall": "CRITICAL"
+    },
+    "status": "reviewed",
+    "doctorId": "user_doc_01",
+    "doctorName": "Dr. Sarika Sharma",
+    "doctorNotes": "Critical severe anemia in second trimester. Prescribed double daily dose of Iron-Folic Acid (IFA) tablets and recommended comprehensive nutritional counseling.",
+    "actionTaken": "medication",
+    "followUpDate": "2026-07-10T10:00:00.000Z",
+    "followUpStatus": "completed",
+    "createdAt": "2026-07-01T08:30:00.000Z"
+  },
+  {
+    "id": "scr_05",
+    "patientId": "user_pat_06",
+    "patientName": "Priya Patel (Pregnant)",
+    "chwId": "user_chw_01",
+    "chwName": "Ramesh Kumar",
+    "screeningType": "Anemia",
+    "readings": {
+      "hemoglobin": 9.2,
+      "isPregnant": true,
+      "trimester": 2,
+      "ageGroup": "adult",
+      "weight": 59,
+      "ifaStarted": true
+    },
+    "riskClassifications": {
+      "anemia": "Moderate",
+      "overall": "HIGH"
+    },
+    "status": "pending",
+    "createdAt": "2026-07-10T09:00:00.000Z"
+  },
+  {
+    "id": "scr_06",
+    "patientId": "user_pat_07",
+    "patientName": "Rahul Kumar (Child)",
+    "chwId": "user_chw_01",
+    "chwName": "Ramesh Kumar",
+    "screeningType": "Anemia",
+    "readings": {
+      "hemoglobin": 11.5,
+      "isPregnant": false,
+      "ageGroup": "child",
+      "weight": 12,
+      "ifaStarted": false
+    },
+    "riskClassifications": {
+      "anemia": "Normal",
+      "overall": "LOW"
+    },
+    "status": "reviewed",
+    "doctorId": "user_doc_01",
+    "doctorName": "Dr. Sarika Sharma",
+    "doctorNotes": "Normal hemoglobin level for a child. Advised continuation of general balanced diet and regular growth checkups.",
+    "actionTaken": "lifestyle_changes",
+    "followUpDate": "2026-08-10T10:00:00.000Z",
+    "followUpStatus": "pending",
+    "createdAt": "2026-07-12T09:30:00.000Z"
+  }
+]

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   User, Calendar, Check, X, ShieldAlert, Sparkles, Search, 
   FileText, Printer, BookOpen, Activity, AlertCircle, RefreshCw, 
-  BarChart2, Plus, Trash2
+  BarChart2, Plus, Trash2, CheckCircle2
 } from 'lucide-react';
 import { 
   ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, 
@@ -12,10 +12,13 @@ import appointmentService from '../services/appointmentService';
 import prescriptionService from '../services/prescriptionService';
 import reportService from '../services/reportService';
 import aiService from '../services/aiService';
+import screeningService from '../services/screeningService';
 import { useApp } from '../context/AppContext';
 import { CardSkeleton, TableSkeleton, SuccessState } from '../components/common/Loader';
 import { MetricCard } from '../components/cards/MetricCard';
-import { Appointment, MedicalReport, Prescription } from '../types';
+import { ScreeningSummaryCard } from '../components/screening/ScreeningSummaryCard';
+import { ClinicalRecommendationCard } from '../components/screening/ClinicalRecommendationCard';
+import { Appointment, MedicalReport, Prescription, Screening } from '../types';
 
 interface PatientProfile {
   id: string;
@@ -64,6 +67,7 @@ const COLORS = ['#22d3ee', '#34d399', '#a855f7', '#f43f5e'];
 export const DoctorDashboard: React.FC = () => {
   const { addNotification } = useApp();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [screenings, setScreenings] = useState<Screening[]>([]);
   const [loading, setLoading] = useState(true);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -71,16 +75,23 @@ export const DoctorDashboard: React.FC = () => {
   const [dashboardTab, setDashboardTab] = useState<'workspace' | 'analytics'>('workspace');
 
   // Queue state variables
-  const [queueTab, setQueueTab] = useState<'today' | 'all' | 'pending' | 'emergency'>('all');
+  const [queueTab, setQueueTab] = useState<'today' | 'all' | 'pending' | 'emergency' | 'screenings'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [urgencyFilter, setUrgencyFilter] = useState<'ALL' | 'LOW' | 'MODERATE' | 'CRITICAL'>('ALL');
 
   // Patient workspace variables
   const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
+  const [selectedScreening, setSelectedScreening] = useState<Screening | null>(null);
   const [patientProfile, setPatientProfile] = useState<PatientProfile | null>(null);
   const [patientReports, setPatientReports] = useState<MedicalReport[]>([]);
   const [patientPrescriptions, setPatientPrescriptions] = useState<Prescription[]>([]);
   
+  // Doctor Screening Evaluation States
+  const [docReviewNotes, setDocReviewNotes] = useState('');
+  const [docActionTaken, setDocActionTaken] = useState('lifestyle_changes');
+  const [docFollowUpDate, setDocFollowUpDate] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+
   // Workspace tabs: 'history' | 'diagnosis' | 'prescription' | 'reports'
   const [workspaceTab, setWorkspaceTab] = useState<'history' | 'diagnosis' | 'prescription' | 'reports'>('history');
 
@@ -115,17 +126,56 @@ export const DoctorDashboard: React.FC = () => {
     }
   };
 
+  const fetchScreenings = async () => {
+    try {
+      const data = await screeningService.getScreenings();
+      setScreenings(data);
+    } catch (err) {
+      console.error('Error fetching screenings:', err);
+    }
+  };
+
   useEffect(() => {
     fetchAppointments();
+    fetchScreenings();
     
     const handleDemoRefresh = () => {
       fetchAppointments();
+      fetchScreenings();
     };
     window.addEventListener('medibridge-demo-refresh', handleDemoRefresh);
     return () => {
       window.removeEventListener('medibridge-demo-refresh', handleDemoRefresh);
     };
   }, []);
+
+  const handleReviewScreeningSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedScreening || !docReviewNotes.trim()) return;
+    setReviewSubmitting(true);
+    try {
+      const updated = await screeningService.reviewScreening(selectedScreening.id, {
+        doctorNotes: docReviewNotes,
+        actionTaken: docActionTaken,
+        followUpDate: docFollowUpDate || undefined,
+      });
+
+      setScreenings(prev => prev.map(s => s.id === selectedScreening.id ? updated : s));
+      setSelectedScreening(updated);
+      setSuccessMsg(`Screening evaluation successfully saved for ${selectedScreening.patientName}.`);
+      addNotification(
+        'Screening Reviewed',
+        `Completed medical review for ${selectedScreening.patientName}.`,
+        'followup'
+      );
+      setDocReviewNotes('');
+      setDocFollowUpDate('');
+    } catch (err) {
+      console.error('Error submitting screening review:', err);
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   // Fetch patient profile, history, reports, and prescriptions on patient change
   useEffect(() => {
@@ -389,6 +439,12 @@ export const DoctorDashboard: React.FC = () => {
     return matchesSearch && matchesUrgency && matchesQueue;
   });
 
+  const filteredScreenings = screenings.filter(scr => {
+    const matchesSearch = scr.patientName.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesUrgency = urgencyFilter === 'ALL' || scr.riskClassifications.overall === urgencyFilter;
+    return matchesSearch && matchesUrgency;
+  });
+
   const pendingCount = appointments.filter(a => a.status === 'pending').length;
   const criticalCount = appointments.filter(a => {
     const reasonLower = a.reason.toLowerCase();
@@ -540,7 +596,7 @@ export const DoctorDashboard: React.FC = () => {
             <div className="lg:col-span-4 glass-card p-5 rounded-2xl border border-white/5 space-y-4">
               <div className="flex items-center justify-between border-b border-white/5 pb-2">
                 <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Patient Triage Queue</h3>
-                <span className="text-[10px] text-slate-500 font-mono">{filteredAppointments.length} matching</span>
+                <span className="text-[10px] text-slate-500 font-mono">{queueTab === 'screenings' ? filteredScreenings.length : filteredAppointments.length} matching</span>
               </div>
 
               {/* Filters */}
@@ -558,10 +614,11 @@ export const DoctorDashboard: React.FC = () => {
 
                 {/* Queue Tab switches */}
                 <div className="flex bg-slate-900/60 p-0.5 rounded-lg border border-white/5 text-[9px] font-bold">
-                  <button onClick={() => setQueueTab('all')} className={`flex-1 py-1 rounded-md ${queueTab === 'all' ? 'bg-slate-800 text-slate-100' : 'text-slate-500'}`}>All</button>
-                  <button onClick={() => setQueueTab('today')} className={`flex-1 py-1 rounded-md ${queueTab === 'today' ? 'bg-slate-800 text-slate-100' : 'text-slate-500'}`}>Today</button>
-                  <button onClick={() => setQueueTab('pending')} className={`flex-1 py-1 rounded-md ${queueTab === 'pending' ? 'bg-slate-800 text-slate-100' : 'text-slate-500'}`}>Pending</button>
-                  <button onClick={() => setQueueTab('emergency')} className={`flex-1 py-1 rounded-md ${queueTab === 'emergency' ? 'bg-slate-800 text-slate-100' : 'text-slate-500'}`}>Urgent</button>
+                  <button onClick={() => { setQueueTab('all'); setSelectedScreening(null); }} className={`flex-1 py-1 rounded-md ${queueTab === 'all' ? 'bg-slate-800 text-slate-100' : 'text-slate-500'}`}>All</button>
+                  <button onClick={() => { setQueueTab('today'); setSelectedScreening(null); }} className={`flex-1 py-1 rounded-md ${queueTab === 'today' ? 'bg-slate-800 text-slate-100' : 'text-slate-500'}`}>Today</button>
+                  <button onClick={() => { setQueueTab('pending'); setSelectedScreening(null); }} className={`flex-1 py-1 rounded-md ${queueTab === 'pending' ? 'bg-slate-800 text-slate-100' : 'text-slate-500'}`}>Pending</button>
+                  <button onClick={() => { setQueueTab('emergency'); setSelectedScreening(null); }} className={`flex-1 py-1 rounded-md ${queueTab === 'emergency' ? 'bg-slate-800 text-slate-100' : 'text-slate-500'}`}>Urgent</button>
+                  <button onClick={() => { setQueueTab('screenings'); setSelectedAppt(null); }} className={`flex-1 py-1 rounded-md ${queueTab === 'screenings' ? 'bg-slate-800 text-slate-100' : 'text-slate-500'}`}>Screenings</button>
                 </div>
 
                 {/* Urgency Badge selector */}
@@ -585,14 +642,56 @@ export const DoctorDashboard: React.FC = () => {
 
               {/* Appointments List */}
               <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                {filteredAppointments.length > 0 ? (
+                {queueTab === 'screenings' ? (
+                  filteredScreenings.length > 0 ? (
+                    filteredScreenings.map(scr => {
+                      const isSelected = selectedScreening?.id === scr.id;
+                      return (
+                        <button
+                          key={scr.id}
+                          onClick={() => {
+                            setSelectedScreening(scr);
+                            setSelectedAppt(null);
+                          }}
+                          className={`w-full p-3 rounded-xl border text-left flex flex-col gap-1 transition-all ${
+                            isSelected 
+                              ? 'bg-cyan-500/5 border-cyan-500/20 shadow-glow-cyan' 
+                              : 'bg-white/[0.01] border-white/5 hover:bg-white/[0.03]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <h4 className="text-xs font-bold text-slate-200">{scr.patientName}</h4>
+                            <span className={`text-[8px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase ${
+                              scr.status === 'reviewed'
+                                ? 'bg-emerald-500/10 text-emerald-450 border border-emerald-500/20'
+                                : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 animate-pulse'
+                            }`}>
+                              {scr.status === 'reviewed' ? 'Reviewed' : 'Pending'}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-medium truncate w-full">{scr.screeningType} Risk: {scr.riskClassifications.overall}</p>
+                          <span className="text-[8px] text-slate-500 font-mono">
+                            {new Date(scr.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                          </span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-10 text-slate-600 text-xs">
+                      No matching screenings found.
+                    </div>
+                  )
+                ) : filteredAppointments.length > 0 ? (
                   filteredAppointments.map(appt => {
                     const isSelected = selectedAppt?.id === appt.id;
                     const isCritical = appt.reason.toLowerCase().includes('chest') || appt.reason.toLowerCase().includes('breath') || appt.reason.toLowerCase().includes('heart');
                     return (
                       <button
                         key={appt.id}
-                        onClick={() => setSelectedAppt(appt)}
+                        onClick={() => {
+                          setSelectedAppt(appt);
+                          setSelectedScreening(null);
+                        }}
                         className={`w-full p-3 rounded-xl border text-left flex flex-col gap-1 transition-all ${
                           isSelected 
                             ? 'bg-cyan-500/5 border-cyan-500/20 shadow-glow-cyan' 
@@ -603,7 +702,7 @@ export const DoctorDashboard: React.FC = () => {
                           <h4 className="text-xs font-bold text-slate-200">{appt.patientName}</h4>
                           <span className={`text-[8px] px-1.5 py-0.5 rounded font-black tracking-wider uppercase ${
                             isCritical
-                              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                              ? 'bg-rose-500/10 text-rose-450 border border-rose-500/20'
                               : appt.status === 'pending'
                               ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
                               : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
@@ -628,7 +727,133 @@ export const DoctorDashboard: React.FC = () => {
 
             {/* 2. Patient Active Workspace (Right 8 cols) */}
             <div className="lg:col-span-8 flex flex-col gap-6">
-              {selectedAppt ? (
+              {selectedScreening ? (
+                <div className="glass-card p-6 rounded-2xl border border-white/5 space-y-5">
+                  {/* Top patient banner */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-4 gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-emerald-400 flex items-center justify-center font-bold text-black text-sm shadow-glow-cyan flex-shrink-0">
+                        {selectedScreening.patientName.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-100">{selectedScreening.patientName}</h3>
+                        <p className="text-[10px] text-slate-400 font-sans">
+                          Patient ID: {selectedScreening.patientId} • Triage Type: {selectedScreening.screeningType}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start sm:self-center">
+                      <span className={`text-[10px] border px-2.5 py-1 rounded font-bold uppercase ${
+                        selectedScreening.status === 'reviewed'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20 animate-pulse'
+                      }`}>
+                        {selectedScreening.status === 'reviewed' ? 'Reviewed' : 'Awaiting Evaluation'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Vitals Summary Card */}
+                  <ScreeningSummaryCard screening={selectedScreening} />
+
+                  {/* Rule-based Clinical Reference Guideline */}
+                  <ClinicalRecommendationCard screening={selectedScreening} />
+
+                  {/* CHW Triage Details */}
+                  <div className="p-4 bg-white/[0.01] border border-white/5 rounded-xl text-xs space-y-1.5 text-slate-350">
+                    <p><span className="text-slate-500">Intake Health Worker:</span> Ramesh Kumar (ID: {selectedScreening.chwId})</p>
+                    <p><span className="text-slate-500">Screening Timestamp:</span> {new Date(selectedScreening.createdAt).toLocaleString()}</p>
+                  </div>
+
+                  {/* Doctor Review evaluation form or outcome display */}
+                  {selectedScreening.status === 'pending' ? (
+                    <form onSubmit={handleReviewScreeningSubmit} className="space-y-4 pt-2 border-t border-white/5">
+                      <h4 className="text-xs font-bold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
+                        <Activity className="w-4 h-4 text-cyan-400" /> Clinic Consultation & Review
+                      </h4>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[9px] font-bold text-slate-500 uppercase">Clinician Action Directives</label>
+                        <select
+                          value={docActionTaken}
+                          onChange={(e) => setDocActionTaken(e.target.value)}
+                          className="w-full bg-[#0b1120] border border-white/5 rounded-lg py-2.5 px-3 text-xs text-slate-200 focus:outline-none"
+                        >
+                          {selectedScreening.screeningType === 'Anemia' ? (
+                            <>
+                              <option value="lifestyle_changes">Nutritional & Diet Counseling</option>
+                              <option value="medication">Dietary Iron Supplementation (IFA Tablets)</option>
+                              <option value="referred">Referral for Severe Anemia Management</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="lifestyle_changes">Lifestyle Changes & Diet Monitoring</option>
+                              <option value="medication">Pharmacological Prescription & Clinical Follow-up</option>
+                              <option value="referred">Referred to Emergency Team</option>
+                            </>
+                          )}
+                        </select>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Consultation Notes & Feedback</label>
+                          <textarea
+                            rows={3}
+                            value={docReviewNotes}
+                            onChange={(e) => setDocReviewNotes(e.target.value)}
+                            placeholder="Write diagnosis, advice, or drug guidelines..."
+                            className="w-full bg-[#0b1120] border border-white/5 rounded-lg p-3 text-xs text-slate-200 focus:outline-none resize-none"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-[9px] font-bold text-slate-500 uppercase">Recommended Follow-up Date (Optional)</label>
+                          <input
+                            type="date"
+                            value={docFollowUpDate}
+                            onChange={(e) => setDocFollowUpDate(e.target.value)}
+                            className="w-full bg-[#0b1120] border border-white/5 rounded-lg py-2.5 px-3 text-xs text-slate-200 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={reviewSubmitting}
+                        className="glass-btn-primary py-2.5 px-6 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                      >
+                        {reviewSubmitting ? (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5" />
+                        )}
+                        Submit Clinical Evaluation
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="pt-4 border-t border-white/5 space-y-4">
+                      <h4 className="text-xs font-bold text-slate-350 uppercase tracking-wider flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Screening Review Completed
+                      </h4>
+
+                      <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl space-y-3 text-xs text-slate-300">
+                        <p><span className="text-slate-500 font-bold block">Reviewing Clinician:</span> {selectedScreening.doctorName || 'Dr. Sarika Sharma'}</p>
+                        <p><span className="text-slate-500 font-bold block">Action Directives:</span> {
+                          selectedScreening.screeningType === 'Anemia'
+                            ? (selectedScreening.actionTaken === 'lifestyle_changes' ? 'Nutritional & Diet Counseling' : selectedScreening.actionTaken === 'medication' ? 'Dietary Iron Supplementation (IFA Tablets)' : 'Referral for Severe Anemia Management')
+                            : (selectedScreening.actionTaken === 'lifestyle_changes' ? 'Lifestyle Changes & Diet Monitoring' : selectedScreening.actionTaken === 'medication' ? 'Pharmacological Prescription & Clinical Follow-up' : 'Referred to Emergency Team')
+                        }</p>
+                        <p><span className="text-slate-500 font-bold block">Clinical Notes:</span> "{selectedScreening.doctorNotes}"</p>
+                        {selectedScreening.followUpDate && (
+                          <p><span className="text-slate-500 font-bold block">Follow-up Date:</span> {new Date(selectedScreening.followUpDate).toLocaleDateString()}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : selectedAppt ? (
                 <div className="glass-card p-6 rounded-2xl border border-white/5 space-y-5">
                   {/* Top patient banner */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-4 gap-4">

@@ -99,4 +99,26 @@ export const demoScreeningService: IScreeningService = {
     
     return updated;
   },
+
+  async updateFollowUpStatus(
+    id: string,
+    status: 'pending' | 'completed' | 'none'
+  ): Promise<Screening> {
+    await delay(500);
+    const list = getScreenings();
+    const idx = list.findIndex((s) => s.id === id);
+    if (idx === -1) throw new Error('Screening not found');
+
+    const updated: Screening = {
+      ...list[idx],
+      followUpStatus: status,
+    };
+
+    list[idx] = updated;
+    saveCollection(KEY, list);
+
+    window.dispatchEvent(new Event('medibridge-demo-refresh'));
+
+    return updated;
+  },
 };

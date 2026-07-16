@@ -29,4 +29,8 @@ export interface IScreeningService {
       followUpDate?: string;
     }
   ): Promise<Screening>;
+  updateFollowUpStatus(
+    id: string,
+    status: 'pending' | 'completed' | 'none'
+  ): Promise<Screening>;
 }

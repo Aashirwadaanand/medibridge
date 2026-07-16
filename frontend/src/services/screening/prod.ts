@@ -46,4 +46,12 @@ export const prodScreeningService: IScreeningService = {
     const response = await apiClient.put(`/screenings/${id}/review`, data);
     return response.data?.data?.screening;
   },
+
+  async updateFollowUpStatus(
+    id: string,
+    status: 'pending' | 'completed' | 'none'
+  ): Promise<Screening> {
+    const response = await apiClient.put(`/screenings/${id}/followup`, { status });
+    return response.data?.data?.screening;
+  },
 };

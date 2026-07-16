@@ -111,15 +111,68 @@ export const StepTracker: React.FC = () => {
   );
 };
 
-export const MedicationTickOff: React.FC = () => {
-  const [meds, setMeds] = useState([
-    { id: 1, name: 'Lisinopril 10mg', time: '08:00 AM', taken: true },
-    { id: 2, name: 'Atorvastatin 20mg', time: '09:30 PM', taken: false },
-    { id: 3, name: 'Multivitamin', time: '12:00 PM', taken: false }
-  ]);
+interface MedicationTickOffProps {
+  patientId?: string;
+}
 
-  const toggleMed = (id: number) => {
-    setMeds(prev => prev.map(m => m.id === id ? { ...m, taken: !m.taken } : m));
+export const MedicationTickOff: React.FC<MedicationTickOffProps> = ({ patientId }) => {
+  const [meds, setMeds] = useState<{ id: string | number; name: string; time: string; taken: boolean }[]>([]);
+
+  useEffect(() => {
+    const loadPrescribedMeds = () => {
+      if (!patientId) {
+        setMeds([
+          { id: 1, name: 'Lisinopril 10mg', time: 'Once daily (morning)', taken: true },
+          { id: 2, name: 'Atorvastatin 20mg', time: 'Once daily (bedtime)', taken: false },
+          { id: 3, name: 'Multivitamin', time: 'Once daily (lunch)', taken: false }
+        ]);
+        return;
+      }
+      
+      const raw = localStorage.getItem('demo_db_prescriptions');
+      if (raw) {
+        const list = JSON.parse(raw);
+        const active = list.filter((p: any) => p.patientId === patientId && p.status === 'active');
+        const items = active.flatMap((p: any) => p.medicines.map((m: any, idx: number) => {
+          const mKey = `${patientId}_${p.id}_${idx}`;
+          return {
+            id: mKey,
+            name: `${m.medicineName} ${m.dosage}`,
+            time: m.frequency,
+            taken: localStorage.getItem(`med_taken_${mKey}`) === 'true'
+          };
+        }));
+        
+        if (items.length > 0) {
+          setMeds(items);
+        } else {
+          // Fallback to default
+          setMeds([
+            { id: 1, name: 'Lisinopril 10mg', time: 'Once daily (morning)', taken: true },
+            { id: 2, name: 'Atorvastatin 20mg', time: 'Once daily (bedtime)', taken: false },
+            { id: 3, name: 'Multivitamin', time: 'Once daily (lunch)', taken: false }
+          ]);
+        }
+      }
+    };
+    loadPrescribedMeds();
+    
+    const handleRefresh = () => {
+      loadPrescribedMeds();
+    };
+    window.addEventListener('medibridge-demo-refresh', handleRefresh);
+    return () => window.removeEventListener('medibridge-demo-refresh', handleRefresh);
+  }, [patientId]);
+
+  const toggleMed = (id: string | number) => {
+    setMeds(prev => prev.map(m => {
+      if (m.id === id) {
+        const nextTaken = !m.taken;
+        localStorage.setItem(`med_taken_${id}`, nextTaken ? 'true' : 'false');
+        return { ...m, taken: nextTaken };
+      }
+      return m;
+    }));
   };
 
   const totalMeds = meds.length;
@@ -152,8 +205,8 @@ export const MedicationTickOff: React.FC = () => {
 
       {/* Success State Banner */}
       {allTaken && (
-        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-          <CheckCircle2 className="w-4.5 h-4.5 flex-shrink-0 text-emerald-400" />
+        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-450 text-xs font-semibold flex items-center gap-2">
+          <CheckCircle2 className="w-4.5 h-4.5 flex-shrink-0 text-emerald-450" />
           <span>All doses completed for today! Great job.</span>
         </div>
       )}
@@ -165,7 +218,7 @@ export const MedicationTickOff: React.FC = () => {
             onClick={() => toggleMed(med.id)}
             className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left ${
               med.taken 
-                ? 'bg-emerald-500/5 border-emerald-500/10 text-slate-400' 
+                ? 'bg-[#10b981]/5 border-[#10b981]/15 text-slate-450' 
                 : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05] text-slate-200'
             }`}
           >
@@ -176,7 +229,7 @@ export const MedicationTickOff: React.FC = () => {
                 <Square className="w-4 h-4 text-slate-500" />
               )}
               <div>
-                <p className={`text-xs font-medium ${med.taken ? 'line-through' : ''}`}>{med.name}</p>
+                <p className={`text-xs font-medium ${med.taken ? 'line-through text-slate-500' : ''}`}>{med.name}</p>
                 <p className="text-[10px] text-slate-500 mt-0.5">{med.time}</p>
               </div>
             </div>

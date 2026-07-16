@@ -37,7 +37,7 @@ export function saveCollection<T>(key: string, list: T[]): void {
  * Call this once at app startup (from main.tsx or a DemoProvider).
  */
 export function seedDemoDb(): void {
-  if (localStorage.getItem(STORAGE.DEMO_DB.SEEDED)) return;
+  if (localStorage.getItem(STORAGE.DEMO_DB.SEEDED) && localStorage.getItem(STORAGE.DEMO_DB.SCREENING_REQUESTS)) return;
 
   localStorage.setItem(STORAGE.DEMO_DB.APPOINTMENTS, JSON.stringify(appointmentsJson));
   localStorage.setItem(STORAGE.DEMO_DB.PRESCRIPTIONS, JSON.stringify(prescriptionsJson));
@@ -47,6 +47,72 @@ export function seedDemoDb(): void {
   localStorage.setItem(STORAGE.DEMO_DB.MEDICINES, JSON.stringify(medicinesJson));
   localStorage.setItem(STORAGE.DEMO_DB.SCREENINGS, JSON.stringify(screeningsJson));
   localStorage.setItem(STORAGE.DEMO_DB.VILLAGES, JSON.stringify(villagesJson));
+
+  // Seed default screening requests
+  const defaultRequests = [
+    {
+      id: 'req_01',
+      patientId: 'user_pat_06',
+      patientName: 'Priya Patel (Pregnant)',
+      villageId: 'vil_03',
+      screeningType: 'Anemia Screening',
+      symptoms: 'Mild fatigue, weakness',
+      preferredDate: '2026-07-17',
+      preferredTime: '10:00 AM',
+      notes: 'Please check hemoglobin levels.',
+      status: 'requested',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'req_02',
+      patientId: 'user_pat_01',
+      patientName: 'Anshuman Das',
+      villageId: 'vil_01',
+      screeningType: 'Blood Pressure Screening',
+      symptoms: 'Frequent headaches',
+      preferredDate: '2026-07-18',
+      preferredTime: '11:30 AM',
+      notes: 'Family history of high blood pressure.',
+      status: 'accepted',
+      assignedChwId: 'user_chw_01',
+      assignedChwName: 'Ramesh Kumar',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'req_03',
+      patientId: 'user_pat_07',
+      patientName: 'Rahul Kumar (Child)',
+      villageId: 'vil_01',
+      screeningType: 'Diabetes Screening',
+      symptoms: 'Increased thirst',
+      preferredDate: '2026-07-19',
+      preferredTime: '09:00 AM',
+      notes: 'Routine pediatric checkup.',
+      status: 'scheduled',
+      assignedChwId: 'user_chw_01',
+      assignedChwName: 'Ramesh Kumar',
+      scheduledVisitDate: '2026-07-17',
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'req_04',
+      patientId: 'user_pat_05',
+      patientName: 'Aditi Sharma (Adolescent)',
+      villageId: 'vil_02',
+      screeningType: 'General Health Check',
+      symptoms: 'General wellness check',
+      preferredDate: '2026-07-15',
+      preferredTime: '02:00 PM',
+      notes: 'Completed checkup yesterday.',
+      status: 'completed',
+      assignedChwId: 'user_chw_01',
+      assignedChwName: 'Ramesh Kumar',
+      scheduledVisitDate: '2026-07-15',
+      createdAt: new Date().toISOString()
+    }
+  ];
+  localStorage.setItem(STORAGE.DEMO_DB.SCREENING_REQUESTS, JSON.stringify(defaultRequests));
+
   localStorage.setItem(STORAGE.DEMO_DB.SEEDED, 'true');
 }
 

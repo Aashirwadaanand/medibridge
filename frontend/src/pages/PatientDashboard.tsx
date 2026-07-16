@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Heart, Activity, Bot, Send, Calendar, Stethoscope, 
-  AlertTriangle, BookOpen, Clock, CheckCircle2, TrendingUp, HelpCircle
+  AlertTriangle, BookOpen, Clock, CheckCircle2, TrendingUp, HelpCircle,
+  ClipboardCheck, Clock3, UserCheck, CheckCircle, Check
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from 'recharts';
 import { useApp } from '../context/AppContext';
@@ -19,6 +20,15 @@ export const PatientDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [screenings, setScreenings] = useState<Screening[]>([]);
 
+  // Screening requests state
+  const [requests, setRequests] = useState<any[]>([]);
+  const [reqType, setReqType] = useState('Blood Pressure Screening');
+  const [reqSymptoms, setReqSymptoms] = useState('');
+  const [reqDate, setReqDate] = useState('');
+  const [reqTime, setReqTime] = useState('');
+  const [reqNotes, setReqNotes] = useState('');
+  const [reqSuccess, setReqSuccess] = useState<string | null>(null);
+
   // AI Health Assistant chat state
   const [inputText, setInputText] = useState('');
   const [messages, setMessages] = useState<{ sender: 'user' | 'bot'; text: string }[]>([
@@ -26,31 +36,78 @@ export const PatientDashboard: React.FC = () => {
   ]);
   const [aiLoading, setAiLoading] = useState(false);
 
-  const fetchScreenings = async () => {
+  const fetchScreeningsAndRequests = async () => {
     try {
       const data = await screeningService.getScreenings();
       setScreenings(data.filter(s => s.patientId === currentUser.id));
+
+      const rawReq = localStorage.getItem('demo_db_screening_requests');
+      if (rawReq) {
+        const list = JSON.parse(rawReq);
+        setRequests(list.filter((r: any) => r.patientId === currentUser.id));
+      }
     } catch (err) {
-      console.error('Failed to load patient screenings:', err);
+      console.error('Failed to load patient workspace:', err);
     }
   };
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 950);
-    fetchScreenings();
+    fetchScreeningsAndRequests();
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
   useEffect(() => {
     const handleDemoRefresh = () => {
-      fetchScreenings();
+      fetchScreeningsAndRequests();
     };
     window.addEventListener('medibridge-demo-refresh', handleDemoRefresh);
     return () => window.removeEventListener('medibridge-demo-refresh', handleDemoRefresh);
   }, []);
 
-  // 1. Dynamic Screening Calculations (Chronological order)
+  // Submit Patient screening request
+  const handleRequestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reqDate || !reqTime) {
+      alert('Please fill in preferred date and time.');
+      return;
+    }
+
+    const newReq = {
+      id: `req_${Date.now()}`,
+      patientId: currentUser.id,
+      patientName: currentUser.name,
+      villageId: currentUser.villageId || 'vil_01',
+      screeningType: reqType,
+      symptoms: reqSymptoms,
+      preferredDate: reqDate,
+      preferredTime: reqTime,
+      notes: reqNotes,
+      status: 'requested',
+      assignedChwId: '',
+      assignedChwName: '',
+      createdAt: new Date().toISOString()
+    };
+
+    const raw = localStorage.getItem('demo_db_screening_requests') || '[]';
+    const list = JSON.parse(raw);
+    list.unshift(newReq);
+    localStorage.setItem('demo_db_screening_requests', JSON.stringify(list));
+
+    setReqSuccess('Your community screening request has been successfully submitted to your ASHA worker!');
+    setReqSymptoms('');
+    setReqDate('');
+    setReqTime('');
+    setReqNotes('');
+
+    fetchScreeningsAndRequests();
+    window.dispatchEvent(new Event('medibridge-demo-refresh'));
+
+    setTimeout(() => setReqSuccess(null), 5000);
+  };
+
+  // Chronological screenings logs
   const sortedScreenings = useMemo(() => {
     return [...screenings].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [screenings]);
@@ -59,6 +116,13 @@ export const PatientDashboard: React.FC = () => {
     if (sortedScreenings.length === 0) return null;
     return sortedScreenings[sortedScreenings.length - 1];
   }, [sortedScreenings]);
+
+  // Active or latest screening request details
+  const activeRequest = useMemo(() => {
+    if (requests.length === 0) return null;
+    // Sort descending by createdAt to fetch newest
+    return [...requests].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+  }, [requests]);
 
   // Compute Overall Health Status & Diagnoses
   const summaryData = useMemo(() => {
@@ -88,8 +152,6 @@ export const PatientDashboard: React.FC = () => {
     }
 
     const diagnoses: string[] = [];
-    
-    // Check diagnoses from all screenings
     const hasAnemia = sortedScreenings.some(s => s.screeningType === 'Anemia' && s.riskClassifications.anemia && s.riskClassifications.anemia !== 'Normal');
     const hasBP = sortedScreenings.some(s => s.screeningType === 'Hypertension/Diabetes' && s.riskClassifications.hypertension && s.riskClassifications.hypertension !== 'Normal');
     const hasDiabetes = sortedScreenings.some(s => s.screeningType === 'Hypertension/Diabetes' && s.riskClassifications.diabetes && s.riskClassifications.diabetes !== 'Normal');
@@ -125,7 +187,6 @@ export const PatientDashboard: React.FC = () => {
       anemia: null as any
     };
 
-    // 1. High Blood Pressure
     const bpLogs = sortedScreenings.filter(s => s.screeningType === 'Hypertension/Diabetes' && s.readings.systolic !== undefined);
     if (bpLogs.length > 0) {
       const latest = bpLogs[bpLogs.length - 1];
@@ -144,7 +205,6 @@ export const PatientDashboard: React.FC = () => {
         }
       }
 
-      // Friendly Severity Mapping
       const severityMap: Record<string, string> = {
         'Normal': 'Normal blood pressure',
         'Prehypertension': 'Elevated Blood Pressure (Prehypertension)',
@@ -164,7 +224,6 @@ export const PatientDashboard: React.FC = () => {
       };
     }
 
-    // 2. Diabetes
     const sugarLogs = sortedScreenings.filter(s => s.screeningType === 'Hypertension/Diabetes' && s.readings.bloodSugar !== undefined);
     if (sugarLogs.length > 0) {
       const latest = sugarLogs[sugarLogs.length - 1];
@@ -198,11 +257,10 @@ export const PatientDashboard: React.FC = () => {
       };
     }
 
-    // 3. Anemia
-    const anLogs = sortedScreenings.filter(s => s.screeningType === 'Anemia' && s.readings.hemoglobin !== undefined);
-    if (anLogs.length > 0) {
-      const latest = anLogs[anLogs.length - 1];
-      const prev = anLogs.length > 1 ? anLogs[anLogs.length - 2] : null;
+    const anemiaLogs = sortedScreenings.filter(s => s.screeningType === 'Anemia' && s.readings.hemoglobin !== undefined);
+    if (anemiaLogs.length > 0) {
+      const latest = anemiaLogs[anemiaLogs.length - 1];
+      const prev = anemiaLogs.length > 1 ? anemiaLogs[anemiaLogs.length - 2] : null;
       let trend = 'Stable';
       let trendColor = 'text-slate-400';
 
@@ -243,10 +301,7 @@ export const PatientDashboard: React.FC = () => {
       };
     }
 
-    // Attempt to gather notes
     const note = latestScreening.doctorNotes || '';
-    
-    // Build patient-friendly descriptions based on screening details
     let medication = latestScreening.actionTaken === 'medication' ? 'Prescribed clinical medications started.' : 'Under observation (no active medicines)';
     let lifestyle = 'Avoid stress, maintain regular sleep patterns, avoid tobacco/alcohol.';
     let diet = 'Drink plenty of water. Reduce processed food and carbonated drinks.';
@@ -262,7 +317,6 @@ export const PatientDashboard: React.FC = () => {
     }
 
     if (note) {
-      // Prepend clinician notes
       lifestyle = `${note}. ${lifestyle}`;
     }
 
@@ -301,7 +355,6 @@ export const PatientDashboard: React.FC = () => {
       return { label: 'Needs Review', color: 'text-rose-400 bg-rose-500/10 border-rose-500/20 animate-pulse' };
     }
     
-    // Check if the trend showed overall risk drops
     if (sortedScreenings.length > 1) {
       const riskOrder = { 'LOW': 0, 'MODERATE': 1, 'HIGH': 2, 'CRITICAL': 3 };
       const oldestRisk = riskOrder[sortedScreenings[0].riskClassifications.overall || 'LOW'];
@@ -313,7 +366,7 @@ export const PatientDashboard: React.FC = () => {
     return { label: 'Stable', color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' };
   }, [latestScreening, sortedScreenings]);
 
-  // Suggested Prompts handler
+  // Suggested Prompts
   const suggestedPrompts = useMemo(() => {
     const prompts = ['Explain my general health status.', 'What foods should I eat to stay healthy?'];
     if (conditionsData.bp) {
@@ -325,7 +378,7 @@ export const PatientDashboard: React.FC = () => {
     if (conditionsData.anemia) {
       prompts.push('Why do I have anemia?', 'How does iron help my blood?');
     }
-    return prompts.slice(0, 4); // Limit to top 4 options
+    return prompts.slice(0, 4);
   }, [conditionsData]);
 
   const handleAskAI = async (promptText: string) => {
@@ -353,6 +406,21 @@ export const PatientDashboard: React.FC = () => {
     await handleAskAI(inputText);
   };
 
+  // Request stepper step mapping
+  const activeRequestStep = useMemo(() => {
+    if (!activeRequest) return 0;
+    const stages: Record<string, number> = {
+      'requested': 1,
+      'accepted': 2,
+      'scheduled': 3,
+      'screened': 4,
+      'reviewing': 5,
+      'treatment': 6,
+      'completed': 7
+    };
+    return stages[activeRequest.status] || 1;
+  }, [activeRequest]);
+
   if (loading) {
     return (
       <div className="space-y-6 max-w-7xl mx-auto p-6">
@@ -370,11 +438,11 @@ export const PatientDashboard: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6 text-left">
       {/* Emergency Alert Banner */}
       {summaryData.isCritical && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/25 rounded-2xl flex items-start gap-3 text-xs text-rose-450 animate-pulse">
+        <div className="p-4 bg-rose-500/10 border border-rose-500/25 rounded-2xl flex items-start gap-3 text-xs text-rose-450 animate-pulse animate-fadeIn">
           <AlertTriangle className="w-5 h-5 flex-shrink-0 text-rose-450" />
           <div className="space-y-1">
             <h4 className="font-bold uppercase tracking-wider text-[10px]">⚠️ Emergency Warning Alert</h4>
-            <p className="font-sans leading-relaxed text-slate-350">
+            <p className="font-sans leading-relaxed text-slate-355">
               Immediate medical consultation is highly recommended. Your latest diagnostic screening logs show critical risk readings. Please visit the nearest Primary Health Center (PHC) or hospital immediately.
             </p>
           </div>
@@ -456,7 +524,181 @@ export const PatientDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 2: Condition Details & Doctor Recommendations advice */}
+      {/* Row 2: Community Health Services (Form & Tracker Stepper) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Status Tracker Stepper (Left) */}
+        <div className="glass-card p-6 rounded-2xl border border-white/5 space-y-5 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="border-b border-white/5 pb-2.5">
+              <h3 className="text-xs font-bold text-slate-350 uppercase tracking-wider font-sans flex items-center gap-2">
+                <Clock3 className="w-4.5 h-4.5 text-cyan-400" /> Upcoming Home Visit Tracker
+              </h3>
+            </div>
+
+            {activeRequest ? (
+              <div className="space-y-4 text-xs font-sans">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider block">Expected Screening</span>
+                    <span className="font-bold text-slate-200 mt-1 block">{activeRequest.screeningType}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider block">Assigned ASHA Worker</span>
+                    <span className="font-bold text-slate-200 mt-1 block flex items-center gap-1">
+                      <UserCheck className="w-3.5 h-3.5 text-cyan-455" /> {activeRequest.assignedChwName || 'Awaiting assignment'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider block">Scheduled Visit Date</span>
+                    <span className="font-bold text-emerald-450 mt-1 block">
+                      {activeRequest.scheduledVisitDate ? new Date(activeRequest.scheduledVisitDate).toLocaleDateString() : 'Pending Scheduling'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-500 uppercase tracking-wider block">Visit Status</span>
+                    <span className="inline-block mt-1 px-2.5 py-0.5 rounded text-[9px] font-mono border font-extrabold uppercase bg-cyan-500/10 text-cyan-400 border-cyan-500/20">
+                      {activeRequest.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Horizontal Progress Stepper */}
+                <div className="space-y-3 pt-4 border-t border-white/[0.03]">
+                  <span className="text-[9px] text-slate-500 uppercase tracking-wider block font-bold">Care Request Steps</span>
+                  <div className="flex items-center justify-between text-[8px] font-mono text-slate-500 mt-2">
+                    {[
+                      { step: 1, label: 'Requested' },
+                      { step: 2, label: 'Accepted' },
+                      { step: 3, label: 'Scheduled' },
+                      { step: 4, label: 'Screened' },
+                      { step: 5, label: 'Reviewing' },
+                      { step: 6, label: 'Treatment' },
+                      { step: 7, label: 'Completed' }
+                    ].map(st => {
+                      const isActive = activeRequestStep >= st.step;
+                      return (
+                        <div key={st.step} className="flex flex-col items-center gap-1.5 flex-1 relative">
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center border font-bold text-[9px] transition-all ${
+                            isActive 
+                              ? 'bg-cyan-500 text-black border-cyan-450 shadow-glow-cyan' 
+                              : 'bg-[#0f172a] border-white/10 text-slate-600'
+                          }`}>
+                            {activeRequestStep > st.step ? <Check className="w-2.5 h-2.5" /> : st.step}
+                          </div>
+                          <span className={`text-[8px] uppercase tracking-wider font-semibold transition-colors ${
+                            isActive ? 'text-cyan-400' : 'text-slate-550'
+                          }`}>
+                            {st.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 text-center text-slate-500 italic text-xs">
+                No upcoming home health visits requested yet. Use the Request form to schedule a CHW screening.
+              </div>
+            )}
+          </div>
+          {activeRequest && (
+            <div className="p-3 bg-cyan-500/5 rounded-xl border border-cyan-500/10 text-[9px] text-slate-400 font-mono">
+              ASHA workers conduct door-to-door screenings based on NCD parameters.
+            </div>
+          )}
+        </div>
+
+        {/* Request Submission Form (Right) */}
+        <div className="glass-card p-6 rounded-2xl border border-white/5 space-y-4">
+          <div className="border-b border-white/5 pb-2.5">
+            <h3 className="text-xs font-bold text-slate-350 uppercase tracking-wider font-sans flex items-center gap-2">
+              <ClipboardCheck className="w-4.5 h-4.5 text-cyan-400" /> Request Community Screening
+            </h3>
+          </div>
+
+          {reqSuccess && (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-450 text-[10px] rounded-xl flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{reqSuccess}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleRequestSubmit} className="space-y-4 text-xs font-sans">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Screening Service Requested</label>
+                <select
+                  value={reqType}
+                  onChange={(e) => setReqType(e.target.value)}
+                  className="w-full bg-[#0b1120] border border-white/5 rounded-lg py-2 px-3 text-slate-250 focus:outline-none"
+                >
+                  <option value="Blood Pressure Screening">Blood Pressure Check</option>
+                  <option value="Diabetes Screening">Blood Glucose (Diabetes) Check</option>
+                  <option value="Anemia Screening">Maternal & Child Anemia Hb check</option>
+                  <option value="General Health Check">General NCD Health Check</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Observed Symptoms (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. headaches, fatigue, dizziness"
+                  value={reqSymptoms}
+                  onChange={(e) => setReqSymptoms(e.target.value)}
+                  className="w-full bg-[#0b1120] border border-white/5 rounded-lg py-2 px-3 text-slate-250 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Preferred Visit Date</label>
+                <input
+                  type="date"
+                  value={reqDate}
+                  onChange={(e) => setReqDate(e.target.value)}
+                  className="w-full bg-[#0b1120] border border-white/5 rounded-lg py-2 px-3 text-slate-250 focus:outline-none text-xs"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Preferred Time Slot</label>
+                <input
+                  type="time"
+                  value={reqTime}
+                  onChange={(e) => setReqTime(e.target.value)}
+                  className="w-full bg-[#0b1120] border border-white/5 rounded-lg py-2 px-3 text-slate-250 focus:outline-none text-xs"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Additional Directives & Notes</label>
+              <textarea
+                rows={2}
+                placeholder="Include any specific medical history or requests..."
+                value={reqNotes}
+                onChange={(e) => setReqNotes(e.target.value)}
+                className="w-full bg-[#0b1120] border border-white/5 rounded-lg py-2 px-3 text-slate-250 focus:outline-none"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="px-4 py-2 bg-cyan-500 text-black font-extrabold rounded-lg hover:bg-cyan-400 border border-white/10"
+            >
+              Request Home Health Visit
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Row 3: Condition Details & Doctor Recommendations advice */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* MY CONDITIONS (2 Cols) */}
         <div className="lg:col-span-2 space-y-6">
@@ -468,7 +710,6 @@ export const PatientDashboard: React.FC = () => {
             </div>
 
             <div className="space-y-4.5 pt-2">
-              {/* BP Condition Card */}
               {conditionsData.bp ? (
                 <div className="p-4 bg-white/[0.01] border border-white/5 rounded-xl space-y-3">
                   <div className="flex justify-between items-center border-b border-white/5 pb-2">
@@ -497,7 +738,6 @@ export const PatientDashboard: React.FC = () => {
                 </div>
               ) : null}
 
-              {/* Diabetes Condition Card */}
               {conditionsData.diabetes ? (
                 <div className="p-4 bg-white/[0.01] border border-white/5 rounded-xl space-y-3">
                   <div className="flex justify-between items-center border-b border-white/5 pb-2">
@@ -522,7 +762,6 @@ export const PatientDashboard: React.FC = () => {
                 </div>
               ) : null}
 
-              {/* Anemia Condition Card */}
               {conditionsData.anemia ? (
                 <div className="p-4 bg-white/[0.01] border border-white/5 rounded-xl space-y-3">
                   <div className="flex justify-between items-center border-b border-white/5 pb-2">
@@ -590,19 +829,19 @@ export const PatientDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-3 bg-emerald-500/5 rounded-xl border border-emerald-500/10 text-[10px] text-emerald-450 font-mono mt-4">
+          <div className="p-3 bg-emerald-500/5 rounded-xl border border-emerald-500/10 text-[10px] text-emerald-455 font-mono mt-4 font-bold">
             {adviceData.reminder}
           </div>
         </div>
       </div>
 
-      {/* Row 3: Health Progress trends & Educational Cards */}
+      {/* Row 4: Health Progress trends & Educational Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* HEALTH PROGRESS TRENDS (2 Cols) */}
         <div className="lg:col-span-2 glass-card p-6 rounded-2xl border border-white/5 space-y-4">
           <div className="flex justify-between items-center border-b border-white/5 pb-2.5">
-            <h3 className="text-xs font-bold text-slate-350 uppercase tracking-wider font-sans flex items-center gap-2">
-              <TrendingUp className="w-4.5 h-4.5 text-emerald-450" /> Health Progress Trends
+            <h3 className="text-xs font-bold text-slate-355 uppercase tracking-wider font-sans flex items-center gap-2">
+              <TrendingUp className="w-4.5 h-4.5 text-emerald-455" /> Health Progress Trends
             </h3>
             <span className={`px-2 py-0.5 rounded text-[9px] font-mono border font-extrabold uppercase ${progressStatus.color}`}>
               Status: {progressStatus.label}
@@ -616,16 +855,9 @@ export const PatientDashboard: React.FC = () => {
                   <XAxis dataKey="date" stroke="#475569" fontSize={9} tickLine={false} />
                   <YAxis stroke="#475569" fontSize={9} tickLine={false} />
                   <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', fontSize: 10 }} />
-                  
-                  {/* Hb metric curve */}
                   <Area type="monotone" dataKey="hb" name="Hemoglobin (g/dL)" stroke="#f43f5e" fillOpacity={0.05} fill="url(#colorHb)" />
-                  
-                  {/* BP curve */}
                   <Area type="monotone" dataKey="bp" name="Systolic BP (mmHg)" stroke="#06b6d4" fillOpacity={0.05} fill="url(#colorBp)" />
-                  
-                  {/* Glucose curve */}
                   <Area type="monotone" dataKey="sugar" name="Blood Glucose (mg/dL)" stroke="#a855f7" fillOpacity={0.05} fill="url(#colorSugar)" />
-                  
                   <defs>
                     <linearGradient id="colorHb" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2}/>
@@ -646,7 +878,7 @@ export const PatientDashboard: React.FC = () => {
               <div className="h-full flex items-center justify-center text-xs text-slate-500 italic">No progress data logged yet.</div>
             )}
           </div>
-          <div className="flex justify-around text-[9px] text-slate-450 font-mono pt-2 border-t border-white/5">
+          <div className="flex justify-around text-[9px] text-[#475569] font-mono pt-2 border-t border-white/5">
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-1 bg-[#f43f5e] inline-block" /> Hemoglobin (Hb)</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-1 bg-[#06b6d4] inline-block" /> Blood Pressure (Systolic)</span>
             <span className="flex items-center gap-1.5"><span className="w-2.5 h-1 bg-[#a855f7] inline-block" /> Blood Sugar</span>
@@ -662,7 +894,6 @@ export const PatientDashboard: React.FC = () => {
           </div>
 
           <div className="space-y-4 overflow-y-auto max-h-[260px] pr-1">
-            {/* BP Info */}
             {conditionsData.bp && (
               <div className="p-3 bg-cyan-500/5 border border-cyan-500/10 rounded-xl space-y-2 text-xs">
                 <span className="font-bold text-cyan-400 uppercase text-[9px] tracking-wider block">❤️ High Blood Pressure Tips</span>
@@ -675,7 +906,6 @@ export const PatientDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Diabetes Info */}
             {conditionsData.diabetes && (
               <div className="p-3 bg-[#a855f7]/5 border border-[#a855f7]/10 rounded-xl space-y-2 text-xs">
                 <span className="font-bold text-[#a855f7] uppercase text-[9px] tracking-wider block">🍬 Diabetes Control Tips</span>
@@ -688,7 +918,6 @@ export const PatientDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* Anemia Info */}
             {conditionsData.anemia && (
               <div className="p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl space-y-2 text-xs">
                 <span className="font-bold text-rose-400 uppercase text-[9px] tracking-wider block">🩸 Anemia Care Guidelines</span>
@@ -715,7 +944,7 @@ export const PatientDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 4: AI Health Assistant Integration */}
+      {/* Row 5: AI Health Assistant Integration */}
       <div className="glass-card p-6 rounded-2xl border border-white/5 space-y-5">
         <div className="border-b border-white/5 pb-2.5">
           <h3 className="text-xs font-bold text-slate-350 uppercase tracking-wider font-sans flex items-center gap-2">
@@ -724,7 +953,6 @@ export const PatientDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Chat Stream Area (2 Cols) */}
           <div className="lg:col-span-2 flex flex-col bg-slate-950/20 border border-white/5 rounded-xl overflow-hidden h-[300px]">
             <div className="flex-1 overflow-y-auto p-4 space-y-3 font-sans">
               {messages.map((m, idx) => (
@@ -772,7 +1000,6 @@ export const PatientDashboard: React.FC = () => {
             </form>
           </div>
 
-          {/* Quick Prompts Panel (1 Col) */}
           <div className="lg:col-span-1 flex flex-col justify-center space-y-4">
             <div>
               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Suggested Prompts</span>
@@ -796,7 +1023,7 @@ export const PatientDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 5: Reusable timeline */}
+      {/* Row 6: Reusable timeline */}
       {screenings.length > 0 && (
         <div className="glass-card p-6 rounded-2xl border border-white/5 space-y-4">
           <div className="border-b border-white/5 pb-2.5">

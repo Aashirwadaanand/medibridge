@@ -94,6 +94,17 @@ export const demoScreeningService: IScreeningService = {
 
     list[idx] = updated;
     saveCollection(KEY, list);
+
+    // If there is an active screening request matching this patient, mark it as completed!
+    const rawReqs = localStorage.getItem('demo_db_screening_requests');
+    if (rawReqs) {
+      const reqList = JSON.parse(rawReqs);
+      const matchIdx = reqList.findIndex((r: any) => r.patientId === updated.patientId && r.status !== 'completed');
+      if (matchIdx !== -1) {
+        reqList[matchIdx].status = 'completed';
+        localStorage.setItem('demo_db_screening_requests', JSON.stringify(reqList));
+      }
+    }
     
     window.dispatchEvent(new Event('medibridge-demo-refresh'));
     

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Activity, Mail, Lock, ArrowRight, AlertCircle, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { DEMO_MODE } from '../config/appMode';
 
 export const LoginPage: React.FC = () => {
   const { login, sessionExpired, setSessionExpired } = useAuth();
@@ -188,6 +189,43 @@ export const LoginPage: React.FC = () => {
             </p>
           </div>
         </div>
+
+        {DEMO_MODE && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="glass-card p-6 rounded-3xl border border-white/5 space-y-4"
+          >
+            <div className="border-b border-white/5 pb-2 text-left">
+              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Demo Accounts Quick Login</h3>
+              <p className="text-[9px] text-slate-500 mt-0.5">Click any role to autofill credentials and log in instantly.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-left">
+              {[
+                { role: 'Patient (Priya)', email: 'priya@medibridge.com', pass: 'priya123' },
+                { role: 'Patient (Anshuman)', email: 'patient@medibridge.com', pass: 'patient123' },
+                { role: 'ASHA / CHW', email: 'chw@medibridge.com', pass: 'chw123' },
+                { role: 'Doctor', email: 'doctor@medibridge.com', pass: 'doctor123' },
+                { role: 'Hospital', email: 'hospital@medibridge.com', pass: 'hospital123' },
+                { role: 'Admin', email: 'admin@medibridge.com', pass: 'admin123' }
+              ].map(acc => (
+                <button
+                  key={acc.email}
+                  type="button"
+                  onClick={() => {
+                    setEmail(acc.email);
+                    setPassword(acc.pass);
+                  }}
+                  className="p-2 bg-white/[0.02] border border-white/5 hover:bg-cyan-500/10 hover:border-cyan-500/20 rounded-xl transition-all"
+                >
+                  <span className="text-[10px] font-bold text-slate-200 block">{acc.role}</span>
+                  <span className="text-[9px] text-slate-500 block truncate font-mono">{acc.email}</span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

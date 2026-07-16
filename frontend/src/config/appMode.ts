@@ -53,16 +53,17 @@ export const STORAGE = {
   NOTIFICATIONS_PREFIX: DEMO_MODE ? 'demo_medibridge_notifications_' : 'medibridge_notifications_',
   /** Demo database namespace — only written in demo mode */
   DEMO_DB: {
-    USERS:         'demo_db_users',
-    APPOINTMENTS:  'demo_db_appointments',
-    PRESCRIPTIONS: 'demo_db_prescriptions',
-    HOSPITALS:     'demo_db_hospitals',
-    NOTIFICATIONS: 'demo_db_notifications',
-    REPORTS:       'demo_db_reports',
-    MEDICINES:     'demo_db_medicines',
-    SCREENINGS:    'demo_db_screenings',
-    VILLAGES:      'demo_db_villages',
-    SEEDED:        'demo_db_seeded',
+    USERS:              'demo_db_users',
+    APPOINTMENTS:       'demo_db_appointments',
+    PRESCRIPTIONS:      'demo_db_prescriptions',
+    HOSPITALS:          'demo_db_hospitals',
+    NOTIFICATIONS:      'demo_db_notifications',
+    REPORTS:            'demo_db_reports',
+    MEDICINES:          'demo_db_medicines',
+    SCREENINGS:         'demo_db_screenings',
+    VILLAGES:           'demo_db_villages',
+    SCREENING_REQUESTS: 'demo_db_screening_requests',
+    SEEDED:             'demo_db_seeded',
   },
 } as const;
 

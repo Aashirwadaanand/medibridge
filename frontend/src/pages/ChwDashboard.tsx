@@ -80,6 +80,11 @@ export const ChwDashboard: React.FC = () => {
     { id: 'm3', name: 'Diabetes Medicines (Metformin)', count: 75, status: 'Pending' }
   ]);
 
+  // ─── Screening Requests Queue State ─────────────────────────────────────────
+  const [screeningRequests, setScreeningRequests] = useState<any[]>([]);
+  const [schedulingReqId, setSchedulingReqId] = useState<string | null>(null);
+  const [scheduleDate, setScheduleDate] = useState<string>('');
+
   // Load Patients and Screenings
   const loadData = async () => {
     try {
@@ -90,6 +95,13 @@ export const ChwDashboard: React.FC = () => {
       ]);
       setPatients(allPatients);
       setScreenings(allScreenings);
+
+      const rawReq = localStorage.getItem('demo_db_screening_requests');
+      if (rawReq) {
+        setScreeningRequests(JSON.parse(rawReq));
+      } else {
+        setScreeningRequests([]);
+      }
     } catch (err) {
       console.error('Error fetching CHW workspace data:', err);
     } finally {
@@ -229,6 +241,21 @@ export const ChwDashboard: React.FC = () => {
         readings
       });
 
+      // Update active request status if conducting screening for a requested visit
+      const activeReqId = localStorage.getItem('medibridge_active_request_id');
+      if (activeReqId) {
+        const rawReqs = localStorage.getItem('demo_db_screening_requests');
+        if (rawReqs) {
+          const reqList = JSON.parse(rawReqs);
+          const reqIdx = reqList.findIndex((r: any) => r.id === activeReqId);
+          if (reqIdx !== -1) {
+            reqList[reqIdx].status = 'screened';
+            localStorage.setItem('demo_db_screening_requests', JSON.stringify(reqList));
+          }
+        }
+        localStorage.removeItem('medibridge_active_request_id');
+      }
+
       setScreenings(prev => [res, ...prev]);
       setSuccessMsg(`Screening successfully saved for ${targetPatient.name}. Vitals triage is pending clinician evaluation.`);
       addNotification(
@@ -238,6 +265,7 @@ export const ChwDashboard: React.FC = () => {
       );
       resetForm();
       setActiveTab('history');
+      window.dispatchEvent(new Event('medibridge-demo-refresh'));
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to submit screening vitals.');
     } finally {
@@ -258,16 +286,13 @@ export const ChwDashboard: React.FC = () => {
       const patient = patients.find(p => p.id === activeVisitPatientId);
       if (!patient) throw new Error('Patient not found');
 
-      // Find their latest pending follow-up screening
       const patientLogs = screenings.filter(s => s.patientId === activeVisitPatientId);
       const latestFollowup = patientLogs.find(s => s.status === 'reviewed' && s.followUpStatus === 'pending');
 
       if (latestFollowup) {
-        // 1. Mark the current follow-up screening as completed
         await screeningService.updateFollowUpStatus(latestFollowup.id, 'completed');
       }
 
-      // 2. Spawn a new screening log in pending review state with the updated home visit vitals
       let readings: any = {};
       let typeOfScreening = latestFollowup?.screeningType || 'Hypertension/Diabetes';
 
@@ -301,7 +326,6 @@ export const ChwDashboard: React.FC = () => {
         'followup'
       );
       
-      // Close form and reload
       setActiveVisitPatientId(null);
       loadData();
     } catch (err: any) {
@@ -322,6 +346,61 @@ export const ChwDashboard: React.FC = () => {
     }));
   };
 
+  // ─── Outreach Queue Handlers ──────────────────────────────────────────────────
+  const handleAcceptRequest = (reqId: string) => {
+    const raw = localStorage.getItem('demo_db_screening_requests');
+    if (raw) {
+      const list = JSON.parse(raw);
+      const idx = list.findIndex((r: any) => r.id === reqId);
+      if (idx !== -1) {
+        list[idx].status = 'accepted';
+        list[idx].assignedChwId = 'user_chw_01';
+        list[idx].assignedChwName = 'Ramesh Kumar';
+        localStorage.setItem('demo_db_screening_requests', JSON.stringify(list));
+        addNotification('Request Accepted', 'You have accepted the community screening request.', 'general');
+        loadData();
+        window.dispatchEvent(new Event('medibridge-demo-refresh'));
+      }
+    }
+  };
+
+  const handleSaveSchedule = (reqId: string) => {
+    if (!scheduleDate) {
+      alert('Please select a visit date.');
+      return;
+    }
+    const raw = localStorage.getItem('demo_db_screening_requests');
+    if (raw) {
+      const list = JSON.parse(raw);
+      const idx = list.findIndex((r: any) => r.id === reqId);
+      if (idx !== -1) {
+        list[idx].status = 'scheduled';
+        list[idx].scheduledVisitDate = scheduleDate;
+        localStorage.setItem('demo_db_screening_requests', JSON.stringify(list));
+        addNotification('Visit Scheduled', `Home visit scheduled for ${new Date(scheduleDate).toLocaleDateString()}`, 'general');
+        setSchedulingReqId(null);
+        setScheduleDate('');
+        loadData();
+        window.dispatchEvent(new Event('medibridge-demo-refresh'));
+      }
+    }
+  };
+
+  const handleConductScreening = (req: any) => {
+    setSelectedPatientId(req.patientId);
+    if (req.screeningType.includes('Blood Pressure')) {
+      setScreeningType('Hypertension/Diabetes');
+    } else if (req.screeningType.includes('Diabetes')) {
+      setScreeningType('Hypertension/Diabetes');
+    } else if (req.screeningType.includes('Anemia')) {
+      setScreeningType('Anemia');
+    } else {
+      setScreeningType('Hypertension/Diabetes');
+    }
+    localStorage.setItem('medibridge_active_request_id', req.id);
+    setActiveTab('new-screening');
+  };
+
   // Filter patients list based on search term
   const filteredPatients = useMemo(() => {
     return patients.filter(p => 
@@ -331,12 +410,10 @@ export const ChwDashboard: React.FC = () => {
   }, [patients, patientSearch]);
 
   // ─── Computed Outreach Workplace Metrics ─────────────────────────────────────
-  
-  // 1. Unique Screened Counts
   const uniquePatients = useMemo(() => new Set(screenings.map(s => s.patientId)).size, [screenings]);
   const highRiskCount = useMemo(() => screenings.filter(s => s.riskClassifications.overall === 'HIGH' || s.riskClassifications.overall === 'CRITICAL').length, [screenings]);
 
-  // 2. Assigned Village coverage list
+  // Assigned Village coverage list
   const villageOutreachStats = useMemo(() => {
     return villagesJson.map(vil => {
       const vilPatients = patients.filter(p => p.villageId === vil.id);
@@ -359,7 +436,7 @@ export const ChwDashboard: React.FC = () => {
     });
   }, [patients, screenings]);
 
-  // 3. Priority Visit List calculation
+  // Priority Visit List calculation
   const priorityVisitList = useMemo(() => {
     const visits: { patientId: string; patientName: string; villageName: string; risk: string; type: string; date: string; lastScreeningId: string }[] = [];
 
@@ -383,22 +460,20 @@ export const ChwDashboard: React.FC = () => {
       }
     });
 
-    // Sort by priority level: CRITICAL -> HIGH -> MODERATE -> LOW
     const riskRank: Record<string, number> = { 'CRITICAL': 0, 'HIGH': 1, 'MODERATE': 2, 'LOW': 3 };
     return visits.sort((a, b) => (riskRank[a.risk] ?? 3) - (riskRank[b.risk] ?? 3));
   }, [patients, screenings]);
 
-  // 4. Referral tracking progress list
+  // Referral tracking progress list
   const referralsList = useMemo(() => {
     return screenings
       .filter(s => s.status === 'reviewed' && s.actionTaken === 'referred')
       .map(s => {
-        // Determine referral progress stages
-        let step = 2; // Screened & Reviewed completed
+        let step = 2;
         if (s.followUpStatus === 'completed') {
-          step = 4; // Followed up
+          step = 4;
         } else if (s.followUpDate) {
-          step = 3; // Treatment / Action Started
+          step = 3;
         }
         return {
           id: s.id,
@@ -407,10 +482,10 @@ export const ChwDashboard: React.FC = () => {
           step,
           date: new Date(s.createdAt).toLocaleDateString()
         };
-      }).slice(0, 3); // Display top 3 referrals
+      }).slice(0, 3);
   }, [screenings]);
 
-  // 5. CHW Monthly activity chart formatters
+  // CHW Monthly activity chart formatters
   const chwChartData = useMemo(() => {
     return [
       { name: 'Jan', screenings: 12 },
@@ -437,7 +512,7 @@ export const ChwDashboard: React.FC = () => {
         </div>
       )}
       {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 flex items-start gap-2.5">
+        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-455 flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 shrink-0 animate-bounce" />
           <span>{errorMsg}</span>
         </div>
@@ -559,6 +634,119 @@ export const ChwDashboard: React.FC = () => {
                 </div>
               </div>
 
+              {/* Patient-Initiated Screening Requests Queue */}
+              <div className="glass-card p-5 rounded-2xl border border-white/5 space-y-4 font-sans text-xs">
+                <div className="border-b border-white/5 pb-2.5 flex justify-between items-center">
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                    <ClipboardList className="w-4 h-4 text-cyan-400" /> Community Screening Requests Queue
+                  </h3>
+                  <span className="text-[10px] text-slate-500 font-mono">{screeningRequests.length} total requests</span>
+                </div>
+
+                {screeningRequests.length > 0 ? (
+                  <div className="space-y-3">
+                    {screeningRequests.map(req => {
+                      const isPending = req.status === 'requested';
+                      const isAccepted = req.status === 'accepted';
+                      const isScheduled = req.status === 'scheduled';
+                      const isResolved = req.status === 'completed';
+
+                      return (
+                        <div key={req.id} className="p-4 bg-white/[0.01] border border-white/5 rounded-xl space-y-3 hover:bg-white/[0.02] transition-colors text-left">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="font-bold text-slate-200 block">{req.patientName}</span>
+                              <span className="text-[9px] text-slate-500 font-mono block mt-0.5">
+                                Requested check: {req.screeningType} • Preferred: {req.preferredDate} ({req.preferredTime})
+                              </span>
+                            </div>
+                            <span className={`px-2.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${
+                              isPending 
+                                ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' 
+                                : isAccepted 
+                                ? 'bg-amber-500/10 text-amber-450 border border-amber-500/20' 
+                                : isScheduled 
+                                ? 'bg-emerald-500/10 text-emerald-450 border border-emerald-500/20' 
+                                : 'bg-slate-850 text-slate-500 border border-white/5'
+                            }`}>
+                              {req.status}
+                            </span>
+                          </div>
+
+                          {req.symptoms && (
+                            <p className="text-[10px] text-slate-400 bg-slate-950/20 p-2 rounded-lg leading-relaxed">
+                              <strong className="text-slate-350">Symptoms:</strong> {req.symptoms}
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/[0.02]">
+                            {isPending && (
+                              <button
+                                onClick={() => handleAcceptRequest(req.id)}
+                                className="px-3 py-1 bg-cyan-500 text-black font-bold rounded text-[10px] hover:bg-cyan-400"
+                              >
+                                Accept Request
+                              </button>
+                            )}
+
+                            {isAccepted && (
+                              <div className="w-full flex items-center gap-2">
+                                {schedulingReqId === req.id ? (
+                                  <div className="flex items-center gap-2 w-full">
+                                    <input
+                                      type="date"
+                                      value={scheduleDate}
+                                      onChange={(e) => setScheduleDate(e.target.value)}
+                                      className="bg-[#0b1120] border border-white/5 rounded px-2.5 py-1 text-[10px] text-slate-250 outline-none"
+                                    />
+                                    <button
+                                      onClick={() => handleSaveSchedule(req.id)}
+                                      className="px-2.5 py-1 bg-emerald-500 text-black font-bold rounded text-[10px] hover:bg-emerald-400"
+                                    >
+                                      Save Date
+                                    </button>
+                                    <button
+                                      onClick={() => setSchedulingReqId(null)}
+                                      className="text-[9px] text-slate-500 hover:underline uppercase"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => setSchedulingReqId(req.id)}
+                                    className="px-3 py-1 bg-amber-500 text-black font-bold rounded text-[10px] hover:bg-amber-400"
+                                  >
+                                    Schedule Home Visit
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {isScheduled && (
+                              <button
+                                onClick={() => handleConductScreening(req)}
+                                className="px-3 py-1 bg-emerald-500 text-black font-extrabold rounded text-[10px] hover:bg-emerald-450 border border-white/10"
+                              >
+                                Conduct Screening
+                              </button>
+                            )}
+
+                            {isResolved && (
+                              <span className="text-[10px] text-emerald-450 font-semibold flex items-center gap-1">
+                                <Check className="w-3.5 h-3.5" /> Screening Visit Completed
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic py-6 text-center">No community screening requests in queue.</p>
+                )}
+              </div>
+
               {/* Today's Prioritized Patient Visits list */}
               <div className="glass-card p-5 rounded-2xl border border-white/5 space-y-4">
                 <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider border-b border-white/5 pb-2.5">Today's Prioritized Patient Visits</h3>
@@ -583,7 +771,7 @@ export const ChwDashboard: React.FC = () => {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-slate-200 text-xs">{visit.patientName}</span>
-                              <span className="text-[9px] text-slate-550 font-mono">({visit.villageName})</span>
+                              <span className="text-[9px] text-slate-555 font-mono">({visit.villageName})</span>
                             </div>
                             <span className="text-[10px] text-slate-500 font-mono block">
                               Last check: {visit.type} • Target: {visit.date}
@@ -718,7 +906,7 @@ export const ChwDashboard: React.FC = () => {
                           type="date"
                           value={visitNextDate}
                           onChange={(e) => setVisitNextDate(e.target.value)}
-                          className="w-full bg-[#0b1120] border border-white/5 rounded-lg py-2 px-3 text-slate-250 focus:outline-none"
+                          className="w-full bg-[#0b1120] border border-white/5 rounded-lg py-2 px-3 text-slate-250 focus:outline-none text-xs"
                         />
                       </div>
                     </div>
@@ -847,14 +1035,14 @@ export const ChwDashboard: React.FC = () => {
                           <span className="font-bold text-slate-200">{ref.name}</span>
                           <span className="text-[9px] text-slate-500 font-mono">{ref.date}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-[8px] font-mono text-slate-450">
+                        <div className="flex items-center gap-1 text-[8px] font-mono text-slate-455 font-bold">
                           <span className={ref.step >= 1 ? 'text-cyan-400 font-bold' : ''}>Screened</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                           <span className={ref.step >= 2 ? 'text-cyan-400 font-bold' : ''}>Reviewed</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                           <span className={ref.step >= 3 ? 'text-cyan-400 font-bold' : ''}>Treatment</span>
                           <ChevronRight className="w-3.5 h-3.5" />
-                          <span className={ref.step >= 4 ? 'text-emerald-455 font-bold' : ''}>Resolved</span>
+                          <span className={ref.step >= 4 ? 'text-[#10b981] font-bold' : ''}>Resolved</span>
                         </div>
                       </div>
                     ))}
@@ -1181,7 +1369,7 @@ export const ChwDashboard: React.FC = () => {
           {/* Right Panel: Rules Engine & Guidelines Info (4 columns) */}
           <div className="lg:col-span-4 space-y-6">
             <div className="glass-card p-5 rounded-2xl border border-white/5 space-y-4 font-sans">
-              <h4 className="text-[10px] font-bold text-slate-350 uppercase tracking-wider border-b border-white/5 pb-2">Live WHO Triage Assessment</h4>
+              <h4 className="text-[10px] font-bold text-slate-355 uppercase tracking-wider border-b border-white/5 pb-2">Live WHO Triage Assessment</h4>
               
               {selectedPatient ? (
                 <div className="space-y-4 text-xs">
@@ -1235,8 +1423,8 @@ export const ChwDashboard: React.FC = () => {
               <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-white/5 pb-2">Triage Diagnostic Guideline</h4>
               <div className="space-y-2 text-[10px] text-slate-550 font-mono leading-relaxed">
                 <p className="text-slate-400"><strong className="text-slate-350">Hypertension Criteria:</strong><br/>Normal: &lt;120/80 mmHg<br/>Stage 1: 140-159 / 90-99 mmHg<br/>Stage 2: 160+ / 100+ mmHg<br/>Crisis: 180+ / 110+ mmHg</p>
-                <p className="text-slate-400 mt-2"><strong className="text-slate-350">Diabetes Criteria Fasting/Random:</strong><br/>Normal: &lt;100 / &lt;140 mg/dL<br/>Prediabetes: 100-125 / 140-199 mg/dL<br/>Diabetes: 126+ / 200+ mg/dL</p>
-                <p className="text-slate-400 mt-2"><strong className="text-slate-350">Anemia WHO Criteria (Hb g/dL):</strong><br/>Pregnant / Child: Normal 11+, Mild 10-10.9, Moderate 7-9.9, Severe &lt;7<br/>Adolescent: Normal 11.5+, Mild 11-11.4, Moderate 8-10.9, Severe &lt;8<br/>Adult: Normal 12+, Mild 11-11.9, Moderate 8-10.9, Severe &lt;8</p>
+                <p className="text-slate-400 mt-2"><strong className="text-slate-355">Diabetes Criteria Fasting/Random:</strong><br/>Normal: &lt;100 / &lt;140 mg/dL<br/>Prediabetes: 100-125 / 140-199 mg/dL<br/>Diabetes: 126+ / 200+ mg/dL</p>
+                <p className="text-slate-400 mt-2"><strong className="text-slate-355">Anemia WHO Criteria (Hb g/dL):</strong><br/>Pregnant / Child: Normal 11+, Mild 10-10.9, Moderate 7-9.9, Severe &lt;7<br/>Adolescent: Normal 11.5+, Mild 11-11.4, Moderate 8-10.9, Severe &lt;8<br/>Adult: Normal 12+, Mild 11-11.9, Moderate 8-10.9, Severe &lt;8</p>
               </div>
             </div>
           </div>
@@ -1317,7 +1505,7 @@ export const ChwDashboard: React.FC = () => {
                               )}
                             </div>
                           ) : (
-                            <span className="text-slate-550 italic font-mono">Awaiting provider review</span>
+                            <span className="text-slate-555 italic font-mono">Awaiting provider review</span>
                           )}
                         </td>
                         <td className="py-3 px-4 text-slate-500 font-mono text-[10px]">
